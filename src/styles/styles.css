@@ -93,7 +93,7 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .login-brand span { display: block; font-size: 10px; letter-spacing: 2px; color: var(--muted); }
 .login-card h1 { font-size: 22px; margin-top: 4px; }
 .login-sub { margin-top: -8px; color: var(--muted); font-size: 13px; }
-.login-error { padding: 10px 12px; border-radius: 9px; background: #fdeceb; color: var(--red); font-size: 13px; font-weight: 600; }
+.login-error { padding: 10px 12px; border-radius: 9px; background: #fdeceb; color: var(--red); font-size: 13px; font-weight: 600; white-space: pre-line; }
 .login-submit { justify-content: center; margin-top: 4px; }
 .user-dropdown-action.subtle:hover { color: var(--green); background: #edf5f1; }
 .att-cell { display: flex; align-items: center; gap: 8px; }
