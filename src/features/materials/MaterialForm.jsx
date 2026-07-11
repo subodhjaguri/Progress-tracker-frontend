@@ -12,7 +12,8 @@ const OTHER = "__other__";
 
 export function MaterialForm({ onClose }) {
   const { role } = useAuth();
-  // Supervisors log consumption (Used); managers record deliveries (Received/Issued).
+  // Managers record a delivery (Received) handed to the site supervisor; the supervisor
+  // logs consumption (Used). There is no "Issued" — handing material onward is usage.
   const isSupervisor = role === "SUPERVISOR";
   const projects = useProjects();
   const create = useCreateMaterial();
@@ -22,11 +23,12 @@ export function MaterialForm({ onClose }) {
   const [materialChoice, setMaterialChoice] = useState(""); // supervisor dropdown value
   const [materialName, setMaterialName] = useState(""); // the value actually submitted
   const [unit, setUnit] = useState("");
-  const [type, setType] = useState("Received"); // manager only
   const [error, setError] = useState("");
 
-  // A supervisor can only log usage of materials that were RECEIVED on that site,
-  // so the material dropdown is seeded from those (Issued-to-contractor stock won't show).
+  const selectedProject = (projects.data || []).find((p) => p.id === projectId);
+
+  // A supervisor can only log usage of materials that were delivered to that site,
+  // so the material dropdown is seeded from those deliveries.
   const received = useMaterials(
     { project: projectId, type: "Received" },
     isSupervisor && !!projectId,
@@ -72,7 +74,7 @@ export function MaterialForm({ onClose }) {
     if (!quantity || quantity <= 0) return setError("Enter a valid quantity");
 
     const body = {
-      type: isSupervisor ? "Used" : type,
+      type: isSupervisor ? "Used" : "Received",
       project: projectId,
       materialName: materialName.trim(),
       quantity,
@@ -80,10 +82,9 @@ export function MaterialForm({ onClose }) {
       note: form.get("note")?.trim() || undefined,
       date: form.get("date") || undefined,
     };
-    if (!isSupervisor) body.party = form.get("party")?.trim() || undefined;
     try {
       await create.mutateAsync(body);
-      announce(isSupervisor ? "Usage logged" : "Material movement recorded");
+      announce(isSupervisor ? "Usage logged" : "Delivery recorded");
       onClose();
     } catch (err) {
       setError(errMessage(err, "Could not save"));
@@ -92,24 +93,16 @@ export function MaterialForm({ onClose }) {
 
   return (
     <Modal
-      title={isSupervisor ? "Log material usage" : "Record material movement"}
+      title={isSupervisor ? "Log material usage" : "Record a delivery"}
       subtitle={
         isSupervisor
           ? "Record how much material was used on site today."
-          : "Add a receipt or issue to the project ledger."
+          : "Log a delivery and hand it to the site supervisor to confirm."
       }
       onClose={onClose}
       wide
     >
       <form className="form-grid" onSubmit={submit}>
-        {!isSupervisor && (
-          <Field label="Movement">
-            <select value={type} onChange={(e) => setType(e.target.value)}>
-              <option>Received</option>
-              <option>Issued</option>
-            </select>
-          </Field>
-        )}
         <Field label="Project">
           <select value={projectId} onChange={(e) => resetProject(e.target.value)} required>
             <option value="" disabled>
@@ -122,6 +115,25 @@ export function MaterialForm({ onClose }) {
             ))}
           </select>
         </Field>
+
+        {/* Managers hand a delivery to the site's supervisor (derived from the project). */}
+        {!isSupervisor && projectId && (
+          <Field label="Handing over to">
+            {selectedProject?.supervisor ? (
+              <input
+                value={selectedProject.supervisor}
+                readOnly
+                className="readonly-input"
+                title="This site's supervisor"
+              />
+            ) : (
+              <div className="field-note warn">
+                No supervisor on this site yet — assign one on the project page so they can
+                confirm this delivery.
+              </div>
+            )}
+          </Field>
+        )}
 
         {isSupervisor && (
           <Field label="Material">
@@ -171,11 +183,6 @@ export function MaterialForm({ onClose }) {
           )}
         </Field>
 
-        {!isSupervisor && (
-          <Field label="Issued to / Supplier">
-            <input name="party" placeholder="Contractor or supplier" />
-          </Field>
-        )}
         <Field label="Date">
           <input name="date" type="date" defaultValue={today()} />
         </Field>
@@ -183,13 +190,13 @@ export function MaterialForm({ onClose }) {
           <textarea
             name="note"
             rows="2"
-            placeholder={isSupervisor ? "What it was used for" : "Purpose or work order"}
+            placeholder={isSupervisor ? "What it was used for (e.g. given to Contractor A)" : "Purpose or reference"}
           />
         </Field>
         {error && <div className="login-error">{error}</div>}
         <FormActions
           onClose={onClose}
-          label={create.isPending ? "Saving…" : isSupervisor ? "Log usage" : "Record movement"}
+          label={create.isPending ? "Saving…" : isSupervisor ? "Log usage" : "Record delivery"}
         />
       </form>
     </Modal>

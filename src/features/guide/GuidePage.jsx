@@ -107,7 +107,7 @@ const FLOW = [
     title: "Records a delivery",
     caption: "Picks the project and logs what arrived.",
     chip: "100 bags · Cement",
-    badge: "Received",
+    badge: "Delivery",
     tone: "blue",
   },
   {

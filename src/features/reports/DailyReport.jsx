@@ -162,7 +162,7 @@ function ReportSheet({ report, date }) {
           ) : (
             <p className="report-empty">No updates posted for this date.</p>
           )}
-          <h2 className="report-subheading">Materials received today</h2>
+          <h2 className="report-subheading">Deliveries today</h2>
           {received.length ? (
             received.map((m) => (
               <div className="report-material" key={m.id}>

@@ -36,3 +36,7 @@ export const ROLE_LABELS = {
   CONTRACTOR: "Contractor",
   SUPERVISOR: "Supervisor",
 };
+
+// A material's stored `Received` movement is shown to users as "Delivery" (the manager
+// isn't physically receiving — they're logging a delivery handed to the supervisor).
+export const movementLabel = (type) => (type === "Received" ? "Delivery" : type);

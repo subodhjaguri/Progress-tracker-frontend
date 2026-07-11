@@ -25,7 +25,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useDashboard } from "../../api/dashboard.js";
 import { useProjects } from "../../api/projects.js";
-import { initials, fmtDate } from "../../lib/format.js";
+import { initials, fmtDate, movementLabel } from "../../lib/format.js";
 
 const CARD_META = {
   totalProjects: { label: "Total Projects", icon: Building2, tone: "green" },
@@ -325,10 +325,10 @@ function SupervisorDashboard({ dash, profile, navigate }) {
                   <div>
                     <strong>{line(m)}</strong>
                     <span>
-                      {m.type} · {m.project?.name || ""} · {fmtDate(m.date)}
+                      {movementLabel(m.type)} · {m.project?.name || ""} · {fmtDate(m.date)}
                     </span>
                   </div>
-                  <StatusPill value={m.type} />
+                  <StatusPill value={m.type} label={movementLabel(m.type)} />
                 </div>
               ))
             ) : (

@@ -1,6 +1,6 @@
 import React from "react";
 
-export function StatusPill({ value }) {
+export function StatusPill({ value, label }) {
   const key = value?.toLowerCase().replaceAll(" ", "-");
-  return <span className={`status-pill status-${key}`}>{value}</span>;
+  return <span className={`status-pill status-${key}`}>{label ?? value}</span>;
 }

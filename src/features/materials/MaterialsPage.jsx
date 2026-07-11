@@ -6,9 +6,14 @@ import { FormActions } from "../shared/FormActions.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useMaterials, useConfirmMaterial } from "../../api/materials.js";
+import { movementLabel } from "../../lib/format.js";
 import { errMessage } from "../../lib/api.js";
 
-const FILTERS = ["All", "Received", "Used", "Issued"];
+const FILTERS = [
+  { label: "All", value: null },
+  { label: "Delivery", value: "Received" },
+  { label: "Used", value: "Used" },
+];
 
 export function MaterialsPage() {
   const { role } = useAuth();
@@ -16,10 +21,10 @@ export function MaterialsPage() {
   const canRecord = role !== "CONTRACTOR";
   const isSupervisor = role === "SUPERVISOR";
   const canConfirm = role === "SUPERVISOR" || role === "SUPER_ADMIN";
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState(FILTERS[0]);
   const [issueFor, setIssueFor] = useState(null);
   const { data: materials = [], isLoading } = useMaterials(
-    filter === "All" ? {} : { type: filter },
+    filter.value ? { type: filter.value } : {},
   );
   const confirm = useConfirmMaterial();
 
@@ -58,14 +63,14 @@ export function MaterialsPage() {
           canRecord ? (
             <button className="primary-button" onClick={() => setModal({ type: "material" })}>
               <Plus size={18} />
-              {isSupervisor ? "Log usage" : "Record movement"}
+              {isSupervisor ? "Log usage" : "Record delivery"}
             </button>
           ) : undefined
         }
       />
       <div className="stats-grid material-stats">
         <StatCard label="Movements" value={materials.length} icon={Boxes} tone="green" />
-        <StatCard label="Received" value={received} icon={ArrowDownToLine} tone="blue" />
+        <StatCard label="Deliveries" value={received} icon={ArrowDownToLine} tone="blue" />
         <StatCard label="Used" value={used} icon={ArrowUpFromLine} tone="amber" />
         <StatCard label="Materials" value={distinct} icon={PackageCheck} tone="violet" />
       </div>
@@ -73,11 +78,11 @@ export function MaterialsPage() {
         <div className="filter-tabs">
           {FILTERS.map((item) => (
             <button
-              key={item}
-              className={filter === item ? "active" : ""}
+              key={item.label}
+              className={filter.label === item.label ? "active" : ""}
               onClick={() => setFilter(item)}
             >
-              {item}
+              {item.label}
             </button>
           ))}
         </div>
@@ -111,7 +116,7 @@ export function MaterialsPage() {
               </div>
               <span>{m.projectName || "—"}</span>
               <div>
-                <StatusPill value={m.type} />
+                <StatusPill value={m.type} label={movementLabel(m.type)} />
                 <strong>
                   {m.quantity} {m.unit}
                 </strong>
