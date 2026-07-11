@@ -2,18 +2,33 @@ import React, { useState } from "react";
 import { Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
 import { TempPasswordNotice } from "./TempPasswordNotice.jsx";
-import { useCreateManager, useCreateContractor } from "../../api/users.js";
+import {
+  useCreateManager,
+  useCreateContractor,
+  useCreateSupervisor,
+} from "../../api/users.js";
 import { errMessage } from "../../lib/api.js";
+
+const META = {
+  manager: { noun: "Manager", subtitle: "Add a project manager and share their login." },
+  contractor: { noun: "Contractor", subtitle: "Add a contractor and share their login." },
+  supervisor: { noun: "Supervisor", subtitle: "Add a site supervisor and share their login." },
+};
 
 export function CreateUserModal({ mode, onClose }) {
   const isContractor = mode === "contractor";
   const createManager = useCreateManager();
   const createContractor = useCreateContractor();
-  const create = isContractor ? createContractor : createManager;
+  const createSupervisor = useCreateSupervisor();
+  const create = {
+    manager: createManager,
+    contractor: createContractor,
+    supervisor: createSupervisor,
+  }[mode];
   const [error, setError] = useState("");
   const [created, setCreated] = useState(null); // { user, temporaryPassword }
 
-  const noun = isContractor ? "Contractor" : "Manager";
+  const { noun, subtitle } = META[mode];
 
   const submit = async (event) => {
     event.preventDefault();
@@ -58,11 +73,7 @@ export function CreateUserModal({ mode, onClose }) {
   return (
     <Modal
       title={`Create ${noun.toLowerCase()}`}
-      subtitle={
-        isContractor
-          ? "Add a contractor and share their login."
-          : "Add a project manager and share their login."
-      }
+      subtitle={subtitle}
       onClose={onClose}
       wide={isContractor}
     >

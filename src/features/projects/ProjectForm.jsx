@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
 import { useCreateProject } from "../../api/projects.js";
-import { useManagers } from "../../api/users.js";
+import { useManagers, useSupervisors } from "../../api/users.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { errMessage } from "../../lib/api.js";
@@ -11,6 +11,7 @@ export function ProjectForm({ onClose }) {
   const { role } = useAuth();
   const isSA = role === "SUPER_ADMIN";
   const managers = useManagers(isSA);
+  const supervisors = useSupervisors(isSA || role === "MANAGER");
   const create = useCreateProject();
   const { announce } = useData();
   const [error, setError] = useState("");
@@ -32,6 +33,8 @@ export function ProjectForm({ onClose }) {
       status: form.get("status") || undefined,
     };
     if (isSA) body.manager = form.get("manager");
+    const supervisor = form.get("supervisor");
+    if (supervisor) body.supervisor = supervisor;
     try {
       await create.mutateAsync(body);
       announce("Project created successfully");
@@ -93,6 +96,16 @@ export function ProjectForm({ onClose }) {
             <option>In Progress</option>
             <option>Blocked</option>
             <option>Completed</option>
+          </select>
+        </Field>
+        <Field label="Supervisor (optional)">
+          <select name="supervisor" defaultValue="">
+            <option value="">— No supervisor —</option>
+            {(supervisors.data || []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
           </select>
         </Field>
         {error && <div className="login-error">{error}</div>}

@@ -24,3 +24,14 @@ export function useCreateProject() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["projects"] }),
   });
 }
+
+export function useUpdateProject(id) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body) => unwrap(await api.put(`/projects/${id}`, body)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      qc.invalidateQueries({ queryKey: ["project", id] });
+    },
+  });
+}

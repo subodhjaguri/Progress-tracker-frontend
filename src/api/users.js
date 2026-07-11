@@ -25,6 +25,14 @@ export function useContractor(id) {
   });
 }
 
+export function useSupervisors(enabled = true) {
+  return useQuery({
+    queryKey: ["supervisors"],
+    queryFn: async () => unwrap(await api.get("/supervisors")),
+    enabled,
+  });
+}
+
 export function useCreateManager() {
   const qc = useQueryClient();
   return useMutation({
@@ -38,6 +46,14 @@ export function useCreateContractor() {
   return useMutation({
     mutationFn: async (body) => unwrap(await api.post("/contractors", body)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contractors"] }),
+  });
+}
+
+export function useCreateSupervisor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body) => unwrap(await api.post("/supervisors", body)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["supervisors"] }),
   });
 }
 
@@ -55,6 +71,7 @@ export function useSetUserStatus() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["managers"] });
       qc.invalidateQueries({ queryKey: ["contractors"] });
+      qc.invalidateQueries({ queryKey: ["supervisors"] });
     },
   });
 }

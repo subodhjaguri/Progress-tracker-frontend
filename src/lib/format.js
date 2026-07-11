@@ -34,4 +34,5 @@ export const ROLE_LABELS = {
   SUPER_ADMIN: "Super Admin",
   MANAGER: "Manager",
   CONTRACTOR: "Contractor",
+  SUPERVISOR: "Supervisor",
 };

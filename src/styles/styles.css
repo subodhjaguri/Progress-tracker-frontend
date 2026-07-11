@@ -198,6 +198,7 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .status-half-day { color: #98601e; background: #fbefde; }
 .status-issued { color: #a25c13; background: #fbecd9; }
 .status-received { color: #1b6752; background: #e2f0ea; }
+.status-used { color: #6b4fa0; background: #ece7f6; }
 .attendance-ring-wrap { padding: 20px 20px 14px; display: flex; align-items: center; gap: 23px; }
 .attendance-ring { width: 118px; height: 118px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--green) var(--attendance), #e8ecea 0); }
 .attendance-ring::before { content: ""; position: absolute; width: 86px; height: 86px; border-radius: 50%; background: white; }
@@ -521,4 +522,68 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
   .modal-backdrop { padding: 10px; }
   .modal { max-height: calc(100vh - 20px); }
   .toast { left: 14px; right: 14px; bottom: 14px; justify-content: center; }
+  /* keep the receipt / confirm cell reachable on mobile (default rule hides col 5) */
+  .ledger-list article > div.ledger-receipt { display: block; grid-column: 1 / -1; }
 }
+
+/* --- Phase 11: supervisor assignment + material receipt/usage --- */
+.cell-select {
+  margin-top: 7px;
+  width: 100%;
+  max-width: 190px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  background: white;
+}
+.receipt-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.ledger-list .receipt-line small { display: inline; margin-top: 0; }
+.receipt-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.receipt-badge.pending { color: #9a6a12; background: #fbeecd; }
+.receipt-badge.confirmed { color: #1c6b4b; background: #e3f3eb; }
+.receipt-badge.issue { color: #9a3b34; background: #fdeceb; }
+.receipt-actions { display: inline-flex; gap: 6px; }
+.mini-button {
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 7px;
+  border: 1px solid var(--green);
+  background: var(--green);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mini-button.ghost { border-color: var(--line); background: white; color: #44504c; }
+
+/* supervisor dashboard material feed */
+.material-feed { display: flex; flex-direction: column; }
+.material-feed-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--soft-line);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.material-feed-row.static { cursor: default; }
+.material-feed-row:last-child { border-bottom: 0; }
+.material-feed-row > svg { color: var(--green); flex: none; }
+.material-feed-row > div { flex: 1; }
+.material-feed-row strong { display: block; font-size: 13px; }
+.material-feed-row span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }

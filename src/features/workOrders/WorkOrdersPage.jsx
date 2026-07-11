@@ -1,17 +1,22 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Plus, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { Section, StatusPill } from "../../components/index.js";
 import { WORK_ORDER_FILTERS } from "../../lib/constants.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useWorkOrders } from "../../api/workOrders.js";
 
 export function WorkOrdersPage() {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const { setModal } = useData();
   const { data: orders = [], isLoading } = useWorkOrders();
   const [filter, setFilter] = useState("All");
+
+  // Supervisors have no work-order access (nav hides it; guard the direct URL too).
+  if (role === "SUPERVISOR") return <Navigate to="/" replace />;
 
   const shown = filter === "All" ? orders : orders.filter((order) => order.status === filter);
 

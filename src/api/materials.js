@@ -17,6 +17,22 @@ export function useCreateMaterial() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body) => unwrap(await api.post("/materials", body)),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["materials"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["materials"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+// The supervisor confirms a delivery ("Confirmed") or flags a problem ("Issue").
+export function useConfirmMaterial() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status, note }) =>
+      unwrap(await api.post(`/materials/${id}/confirm`, { status, note })),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["materials"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }

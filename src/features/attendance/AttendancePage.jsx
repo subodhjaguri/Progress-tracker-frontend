@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { HardHat, UserRoundCheck, X, Clock3, CircleCheckBig } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { StatCard, Section, Field } from "../../components/index.js";
@@ -22,6 +22,7 @@ const statusClass = (s) => s.toLowerCase().replace(" ", "-");
 
 export function AttendancePage() {
   const { role } = useAuth();
+  if (role === "SUPERVISOR") return <Navigate to="/" replace />;
   return role === "CONTRACTOR" ? <ContractorAttendance /> : <ManagerAttendance />;
 }
 

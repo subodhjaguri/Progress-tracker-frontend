@@ -15,15 +15,35 @@ import { OrderRow } from "./OrderRow.jsx";
 import { PhotosPanel } from "../shared/PhotosPanel.jsx";
 import { DocumentsPanel } from "../shared/DocumentsPanel.jsx";
 import { CommentsPanel } from "../shared/CommentsPanel.jsx";
-import { useProject } from "../../api/projects.js";
+import { useProject, useUpdateProject } from "../../api/projects.js";
+import { useSupervisors } from "../../api/users.js";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { useData } from "../../context/DataContext.jsx";
+import { errMessage } from "../../lib/api.js";
 
 const TABS = ["Overview", "Work Orders", "Updates", "Photos", "Documents", "Comments"];
 
 export function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const { announce } = useData();
   const { data: project, isLoading } = useProject(id);
   const [tab, setTab] = useState("Overview");
+
+  const canAssign = role === "SUPER_ADMIN" || role === "MANAGER";
+  const supervisors = useSupervisors(canAssign);
+  const updateProject = useUpdateProject(id);
+
+  const assignSupervisor = async (event) => {
+    const value = event.target.value;
+    try {
+      await updateProject.mutateAsync({ supervisor: value || null });
+      announce(value ? "Supervisor assigned" : "Supervisor removed");
+    } catch (err) {
+      announce(errMessage(err, "Could not update supervisor"));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -90,6 +110,27 @@ export function ProjectDetail() {
           <span>Project manager</span>
           <strong>{project.manager}</strong>
           <small>{project.workOrderCount} work orders</small>
+        </div>
+        <div>
+          <span>Site supervisor</span>
+          {canAssign ? (
+            <select
+              className="cell-select"
+              value={project.supervisorId || ""}
+              onChange={assignSupervisor}
+              disabled={updateProject.isPending}
+            >
+              <option value="">— None —</option>
+              {(supervisors.data || []).map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <strong>{project.supervisor || "—"}</strong>
+          )}
+          <small>Material custodian</small>
         </div>
         <div>
           <span>Client</span>

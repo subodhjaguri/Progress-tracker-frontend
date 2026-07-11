@@ -16,6 +16,8 @@ import { fmtDate, initials } from "../../lib/format.js";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+const RECEIPT_LABEL = { Confirmed: "Confirmed", Issue: "Issue flagged" };
+
 export function DailyReport() {
   const { data: projects = [] } = useProjects();
   const [projectId, setProjectId] = useState("");
@@ -72,7 +74,8 @@ function ReportSheet({ report, date }) {
   const att = report.attendance || {};
   const wos = report.workOrders || { list: [], byStatus: {}, total: 0 };
   const remarks = report.remarks || [];
-  const materials = report.materialsIssued || [];
+  const received = report.materialsReceived || [];
+  const usedMat = report.materialsUsed || [];
   const photos = report.photos || { count: 0 };
 
   return (
@@ -114,7 +117,7 @@ function ReportSheet({ report, date }) {
         <div>
           <PackageCheck />
           <span>
-            <strong>{materials.length}</strong>Material issues
+            <strong>{usedMat.length}</strong>Materials used
           </span>
         </div>
         <div>
@@ -159,21 +162,40 @@ function ReportSheet({ report, date }) {
           ) : (
             <p className="report-empty">No updates posted for this date.</p>
           )}
-          <h2 className="report-subheading">Materials issued today</h2>
-          {materials.length ? (
-            materials.map((m) => (
+          <h2 className="report-subheading">Materials received today</h2>
+          {received.length ? (
+            received.map((m) => (
               <div className="report-material" key={m.id}>
                 <PackageCheck />
                 <span>
                   <strong>
                     {m.quantity} {m.unit} {m.materialName}
                   </strong>
-                  <small>Issued to {m.party || "—"}</small>
+                  <small>
+                    {RECEIPT_LABEL[m.receiptStatus] || "Pending confirmation"}
+                    {m.party ? ` · from ${m.party}` : ""}
+                  </small>
                 </span>
               </div>
             ))
           ) : (
-            <p className="report-empty">No materials issued on this date.</p>
+            <p className="report-empty">No deliveries received on this date.</p>
+          )}
+          <h2 className="report-subheading">Materials used today</h2>
+          {usedMat.length ? (
+            usedMat.map((m) => (
+              <div className="report-material" key={m.id}>
+                <PackageCheck />
+                <span>
+                  <strong>
+                    {m.quantity} {m.unit} {m.materialName}
+                  </strong>
+                  <small>Used on site</small>
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="report-empty">No materials used on this date.</p>
           )}
         </div>
       </div>

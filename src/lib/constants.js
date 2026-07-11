@@ -13,8 +13,18 @@ import {
 export const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/work-orders", label: "Work Orders", icon: ClipboardList },
-  { to: "/attendance", label: "Attendance", icon: Users },
+  {
+    to: "/work-orders",
+    label: "Work Orders",
+    icon: ClipboardList,
+    roles: ["SUPER_ADMIN", "MANAGER", "CONTRACTOR"],
+  },
+  {
+    to: "/attendance",
+    label: "Attendance",
+    icon: Users,
+    roles: ["SUPER_ADMIN", "MANAGER", "CONTRACTOR"],
+  },
   { to: "/labour", label: "Labour", icon: HardHat, roles: ["CONTRACTOR"] },
   { to: "/materials", label: "Materials", icon: Boxes },
   { to: "/team", label: "Team", icon: UsersRound, roles: ["SUPER_ADMIN", "MANAGER"] },

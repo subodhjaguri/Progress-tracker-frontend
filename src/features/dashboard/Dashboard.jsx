@@ -14,6 +14,10 @@ import {
   TrendingUp,
   BriefcaseBusiness,
   UsersRound,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Boxes,
+  PackageCheck,
 } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { Section, StatCard, ProgressBar, StatusPill, TextAction, UpdateItem } from "../../components/index.js";
@@ -37,6 +41,10 @@ const CARD_META = {
   assignedWorkOrders: { label: "Assigned Work Orders", icon: ClipboardList, tone: "green" },
   pendingWorkOrders: { label: "Pending", icon: Clock3, tone: "amber" },
   labourCount: { label: "Labour Count", icon: HardHat, tone: "violet" },
+  mySites: { label: "My Sites", icon: Building2, tone: "green" },
+  pendingConfirmations: { label: "Pending Confirmations", icon: CircleAlert, tone: "amber" },
+  deliveriesThisMonth: { label: "Deliveries this month", icon: ArrowDownToLine, tone: "blue" },
+  usageLoggedToday: { label: "Usage logged today", icon: Boxes, tone: "violet" },
 };
 
 export function Dashboard() {
@@ -53,6 +61,10 @@ export function Dashboard() {
         <strong>Loading dashboard…</strong>
       </div>
     );
+  }
+
+  if (role === "SUPERVISOR") {
+    return <SupervisorDashboard dash={dash} profile={profile} navigate={navigate} />;
   }
 
   const cards = dash.cards || {};
@@ -210,6 +222,118 @@ export function Dashboard() {
               <div className="empty-inline">
                 <strong>Nothing flagged</strong>
                 <p>No blockers or imminent due dates.</p>
+              </div>
+            )}
+          </div>
+        </Section>
+      </div>
+    </>
+  );
+}
+
+// Material-custodian view: pending deliveries to confirm, today's usage, recent activity.
+function SupervisorDashboard({ dash, profile, navigate }) {
+  const cards = dash.cards || {};
+  const sections = dash.sections || {};
+  const pending = sections.pendingConfirmations || [];
+  const usage = sections.todaysUsage || [];
+  const recent = sections.recentActivity || [];
+
+  const line = (m) => `${m.quantity} ${m.unit} ${m.materialName}`;
+
+  return (
+    <>
+      <PageHeading
+        eyebrow="DASHBOARD"
+        title={`Good afternoon, ${profile.name.split(" ")[0]}`}
+        text="Confirm deliveries and log what you use on site today."
+        action={
+          <button className="primary-button" onClick={() => navigate("/materials")}>
+            <Plus size={18} />
+            Log usage
+          </button>
+        }
+      />
+      <div className="stats-grid">
+        {Object.entries(cards).map(([key, value]) => {
+          const m = CARD_META[key] || { label: key, icon: Building2, tone: "green" };
+          return <StatCard key={key} label={m.label} value={value} icon={m.icon} tone={m.tone} />;
+        })}
+      </div>
+      <div className="dashboard-grid">
+        <Section
+          title="Pending confirmations"
+          eyebrow="AWAITING YOU"
+          action={<TextAction onClick={() => navigate("/materials")}>Open materials</TextAction>}
+        >
+          <div className="material-feed">
+            {pending.length ? (
+              pending.map((m) => (
+                <button
+                  key={m.id}
+                  className="material-feed-row"
+                  onClick={() => navigate("/materials")}
+                >
+                  <ArrowDownToLine size={18} />
+                  <div>
+                    <strong>{line(m)}</strong>
+                    <span>
+                      {m.project?.name || ""} · {fmtDate(m.date)}
+                    </span>
+                  </div>
+                  <span className="receipt-badge pending">Pending</span>
+                </button>
+              ))
+            ) : (
+              <div className="empty-inline">
+                <strong>Nothing to confirm</strong>
+                <p>Confirmed deliveries won't show here.</p>
+              </div>
+            )}
+          </div>
+        </Section>
+        <Section
+          title="Today's usage"
+          eyebrow="CONSUMPTION"
+          action={<TextAction onClick={() => navigate("/materials")}>Log usage</TextAction>}
+        >
+          <div className="material-feed">
+            {usage.length ? (
+              usage.map((m) => (
+                <div key={m.id} className="material-feed-row static">
+                  <ArrowUpFromLine size={18} />
+                  <div>
+                    <strong>{line(m)}</strong>
+                    <span>{m.project?.name || ""}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-inline">
+                <strong>No usage logged today</strong>
+                <p>Log what was used on site.</p>
+              </div>
+            )}
+          </div>
+        </Section>
+        <Section title="Recent material activity" eyebrow="LATEST" className="wide-panel">
+          <div className="material-feed">
+            {recent.length ? (
+              recent.map((m) => (
+                <div key={m.id} className="material-feed-row static">
+                  <PackageCheck size={18} />
+                  <div>
+                    <strong>{line(m)}</strong>
+                    <span>
+                      {m.type} · {m.project?.name || ""} · {fmtDate(m.date)}
+                    </span>
+                  </div>
+                  <StatusPill value={m.type} />
+                </div>
+              ))
+            ) : (
+              <div className="empty-inline">
+                <strong>No activity yet</strong>
               </div>
             )}
           </div>

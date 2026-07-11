@@ -10,31 +10,41 @@ import { useData } from "../../context/DataContext.jsx";
 import {
   useManagers,
   useContractors,
+  useSupervisors,
   useResetPassword,
   useSetUserStatus,
 } from "../../api/users.js";
 import { initials } from "../../lib/format.js";
 import { errMessage } from "../../lib/api.js";
 
+const tabToMode = (t) =>
+  t === "Managers" ? "manager" : t === "Supervisors" ? "supervisor" : "contractor";
+
 export function TeamPage() {
   const { role } = useAuth();
   const navigate = useNavigate();
   const { announce } = useData();
   const isSA = role === "SUPER_ADMIN";
-  const tabs = isSA ? ["Managers", "Contractors"] : ["Contractors"];
+  const tabs = isSA
+    ? ["Managers", "Contractors", "Supervisors"]
+    : ["Contractors", "Supervisors"];
   const [tab, setTab] = useState(tabs[0]);
-  const [createMode, setCreateMode] = useState(null); // "manager" | "contractor"
+  const [createMode, setCreateMode] = useState(null); // "manager" | "contractor" | "supervisor"
   const [resetResult, setResetResult] = useState(null);
 
-  // Don't fire team queries for contractors (they're redirected below anyway).
-  const canManage = role !== "CONTRACTOR";
+  // Only Super Admin and Manager manage the team.
+  const canManage = role === "SUPER_ADMIN" || role === "MANAGER";
   const managers = useManagers(isSA);
   const contractors = useContractors(canManage);
+  const supervisors = useSupervisors(canManage);
   const resetPw = useResetPassword();
   const setStatus = useSetUserStatus();
 
-  // Contractors have no team-management access.
-  if (role === "CONTRACTOR") return <Navigate to="/" replace />;
+  // Contractors and Supervisors have no team-management access.
+  if (!canManage) return <Navigate to="/" replace />;
+
+  const queryForTab = (t) =>
+    t === "Managers" ? managers : t === "Supervisors" ? supervisors : contractors;
 
   const handleReset = async (user) => {
     try {
@@ -55,7 +65,7 @@ export function TeamPage() {
     }
   };
 
-  const active = tab === "Managers" ? managers : contractors;
+  const active = queryForTab(tab);
   const list = active.data ?? [];
 
   return (
@@ -63,19 +73,12 @@ export function TeamPage() {
       <PageHeading
         eyebrow="TEAM"
         title="People & access"
-        text="Create and manage the managers and contractors who use the system."
+        text="Create and manage the managers, contractors and supervisors who use the system."
         action={
-          tab === "Managers" ? (
-            <button className="primary-button" onClick={() => setCreateMode("manager")}>
-              <Plus size={18} />
-              Create manager
-            </button>
-          ) : (
-            <button className="primary-button" onClick={() => setCreateMode("contractor")}>
-              <Plus size={18} />
-              Create contractor
-            </button>
-          )
+          <button className="primary-button" onClick={() => setCreateMode(tabToMode(tab))}>
+            <Plus size={18} />
+            Create {tabToMode(tab)}
+          </button>
         }
       />
       <div className="toolbar">
@@ -83,7 +86,7 @@ export function TeamPage() {
           {tabs.map((t) => (
             <button key={t} className={tab === t ? "active" : ""} onClick={() => setTab(t)}>
               {t}
-              <span>{(t === "Managers" ? managers : contractors).data?.length ?? "·"}</span>
+              <span>{queryForTab(t).data?.length ?? "·"}</span>
             </button>
           ))}
         </div>
