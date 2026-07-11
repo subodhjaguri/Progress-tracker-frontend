@@ -587,3 +587,119 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .material-feed-row > div { flex: 1; }
 .material-feed-row strong { display: block; font-size: 13px; }
 .material-feed-row span { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+/* ============================ Guide / How it works ============================ */
+.guide { display: flex; flex-direction: column; gap: 22px; }
+
+/* tone helpers: --t = accent, --tbg = soft accent background */
+.tone-green { --t: var(--green); --tbg: #e3f0ea; }
+.tone-blue { --t: var(--blue); --tbg: #e4eef1; }
+.tone-amber { --t: #b9741f; --tbg: #fbecd9; }
+.tone-violet { --t: var(--violet); --tbg: #ece7f6; }
+.tone-red { --t: var(--red); --tbg: #fbe6e4; }
+.tone-muted { --t: var(--muted); --tbg: #eef1ef; }
+
+.guide-section { padding: 26px 26px 30px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.guide-head { margin-bottom: 22px; }
+.guide-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 1.6px; color: var(--green); }
+.guide-head h2 { margin: 8px 0 6px; font-size: 22px; text-wrap: balance; }
+.guide-head p { margin: 0; max-width: 60ch; color: var(--muted); font-size: 13px; }
+
+/* --- Role tree --- */
+.role-tree { display: flex; flex-direction: column; align-items: center; }
+.role-card {
+  width: 100%; max-width: 420px; padding: 16px; display: flex; gap: 14px;
+  border: 1px solid var(--line); border-left: 4px solid var(--t); border-radius: 13px;
+  background: var(--card); transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.role-card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px -18px rgba(20, 60, 49, 0.5); }
+.role-icon { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--t); background: var(--tbg); }
+.role-body { min-width: 0; }
+.role-body strong { display: block; font-family: "Manrope"; font-size: 15px; }
+.role-role { display: block; margin-top: 1px; font-size: 11px; font-weight: 700; color: var(--t); }
+.role-body p { margin: 7px 0 9px; font-size: 12px; color: var(--muted); }
+.role-body ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.role-body li { padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: #45514c; background: var(--soft-line); }
+.role-card.compact { max-width: 300px; padding: 11px 13px; align-items: center; }
+.role-card.compact .role-body strong { font-size: 13px; }
+
+.tree-link { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--muted); }
+.tree-link::before { content: ""; width: 2px; height: 16px; background: var(--line); }
+.tree-link span { font-size: 10px; font-weight: 700; letter-spacing: 0.3px; color: var(--muted); }
+.role-split { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.role-branch { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.branch-down { display: flex; align-items: center; height: 20px; color: var(--muted); }
+.role-split .role-card { max-width: none; }
+
+/* --- Work chain --- */
+.chain { display: flex; align-items: stretch; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.chain-node {
+  flex: 1 1 0; min-width: 150px; padding: 16px; border: 1px solid var(--line);
+  border-top: 3px solid var(--t); border-radius: 13px; background: var(--card);
+}
+.chain-icon { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: var(--t); background: var(--tbg); margin-bottom: 11px; }
+.chain-node strong { display: block; font-family: "Manrope"; font-size: 14px; }
+.chain-node p { margin: 6px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.45; }
+.chain-arrow { flex: none; display: grid; place-items: center; color: var(--line); align-self: center; }
+
+/* --- Assign callout --- */
+.assign-note {
+  display: flex; gap: 14px; padding: 16px 18px; margin-bottom: 20px;
+  border: 1px solid var(--line); border-radius: 13px;
+  background: linear-gradient(180deg, #f3faf6, var(--card));
+}
+.assign-icon { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: var(--violet); background: #ece7f6; }
+.assign-note strong { display: block; font-size: 14px; font-family: "Manrope"; }
+.assign-note p { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.assign-note em { font-style: normal; font-weight: 700; color: var(--green); }
+
+/* --- Animated material flow --- */
+.flow-demo { display: flex; flex-direction: column; gap: 18px; }
+.flow-track { position: relative; display: flex; justify-content: space-between; gap: 6px; padding-bottom: 16px; }
+.flow-stage { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0; border: 0; background: transparent; text-align: center; }
+.flow-dot {
+  width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--muted); background: var(--card); border: 2px solid var(--line);
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+.flow-stage.done .flow-dot { color: var(--green); background: #e3f0ea; border-color: #bfe0d1; }
+.flow-stage.active .flow-dot { color: #fff; background: var(--green); border-color: var(--green); transform: scale(1.12); box-shadow: 0 0 0 5px #e3f0ea; }
+.flow-step-label { display: flex; flex-direction: column; font-size: 11px; color: var(--muted); }
+.flow-step-label b { font-size: 9px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--muted); }
+.flow-stage.active .flow-step-label { color: var(--ink); font-weight: 600; }
+.flow-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 999px; background: var(--soft-line); overflow: hidden; }
+.flow-progress i { display: block; height: 100%; background: var(--green); border-radius: 999px; transition: width 0.5s ease; }
+
+.flow-stage-card { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; align-items: center; padding: 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--canvas); }
+.flow-actor { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--green); }
+.flow-stage-copy h3 { margin: 7px 0 6px; font-size: 17px; }
+.flow-stage-copy p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.flow-outcome { display: inline-flex; gap: 6px; margin-top: 14px; padding: 4px; border-radius: 10px; background: var(--soft-line); }
+.flow-outcome button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 0; border-radius: 7px; font-size: 12px; font-weight: 600; color: #45514c; background: transparent; }
+.flow-outcome button.active { background: var(--card); color: var(--ink); box-shadow: 0 2px 6px -3px rgba(0, 0, 0, 0.3); }
+
+.flow-stage-visual { display: grid; place-items: center; }
+.material-chip { display: flex; align-items: center; gap: 13px; width: 100%; max-width: 260px; padding: 15px 16px; border: 1px solid var(--line); border-left: 4px solid var(--t); border-radius: 13px; background: var(--card); animation: chip-in 0.45s ease; }
+.material-chip-icon { flex: none; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: var(--t); background: var(--tbg); }
+.material-chip strong { display: block; font-size: 14px; }
+.chip-badge { display: inline-block; margin-top: 5px; padding: 2px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; color: var(--t); background: var(--tbg); }
+@keyframes chip-in { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+.flow-controls { display: flex; align-items: center; gap: 14px; }
+.flow-progress-label { font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 720px) {
+  .guide-section { padding: 20px 16px 24px; }
+  .role-split { grid-template-columns: 1fr; }
+  .flow-stage-card { grid-template-columns: 1fr; }
+  .flow-step-label { font-size: 0; }
+  .flow-step-label b { font-size: 9px; }
+  .chain-arrow { transform: rotate(90deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .role-card, .flow-dot, .flow-progress i { transition: none; }
+  .material-chip { animation: none; }
+}
+
+/* A field auto-filled from another record (e.g. usage unit taken from the delivery). */
+.readonly-input { background: var(--soft-line); color: var(--muted); cursor: default; }

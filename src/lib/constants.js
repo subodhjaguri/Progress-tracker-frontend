@@ -7,6 +7,7 @@ import {
   ChartNoAxesCombined,
   UsersRound,
   HardHat,
+  Compass,
 } from "lucide-react";
 
 // `roles` (optional) restricts a nav item to those role codes; omitted = all roles.
@@ -29,6 +30,7 @@ export const navItems = [
   { to: "/materials", label: "Materials", icon: Boxes },
   { to: "/team", label: "Team", icon: UsersRound, roles: ["SUPER_ADMIN", "MANAGER"] },
   { to: "/reports", label: "Daily Report", icon: ChartNoAxesCombined },
+  { to: "/guide", label: "How it works", icon: Compass, roles: ["SUPER_ADMIN", "MANAGER"] },
 ];
 
 export const roles = {
