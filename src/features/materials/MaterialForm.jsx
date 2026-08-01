@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
-import { useCreateMaterial, useMaterials } from "../../api/materials.js";
+import { useCreateBulkMaterial, useMaterials } from "../../api/materials.js";
 import { useProjects } from "../../api/projects.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
@@ -10,25 +11,30 @@ import { errMessage } from "../../lib/api.js";
 const today = () => new Date().toISOString().slice(0, 10);
 const OTHER = "__other__";
 
+const emptyItem = () => ({
+  key: Date.now() + Math.random(),
+  materialChoice: "",
+  materialName: "",
+  quantity: "",
+  unit: "",
+  note: "",
+});
+
 export function MaterialForm({ onClose }) {
   const { role } = useAuth();
-  // Managers record a delivery (Received) handed to the site supervisor; the supervisor
-  // logs consumption (Used). There is no "Issued" — handing material onward is usage.
   const isSupervisor = role === "SUPERVISOR";
   const projects = useProjects();
-  const create = useCreateMaterial();
+  const createBulk = useCreateBulkMaterial();
   const { announce } = useData();
 
   const [projectId, setProjectId] = useState("");
-  const [materialChoice, setMaterialChoice] = useState(""); // supervisor dropdown value
-  const [materialName, setMaterialName] = useState(""); // the value actually submitted
-  const [unit, setUnit] = useState("");
+  const [party, setParty] = useState("");
   const [error, setError] = useState("");
+  const [items, setItems] = useState([emptyItem()]);
 
   const selectedProject = (projects.data || []).find((p) => p.id === projectId);
 
-  // A supervisor can only log usage of materials that were delivered to that site,
-  // so the material dropdown is seeded from those deliveries.
+  // A supervisor can only log usage of materials that were delivered to that site.
   const received = useMaterials(
     { project: projectId, type: "Received" },
     isSupervisor && !!projectId,
@@ -41,50 +47,82 @@ export function MaterialForm({ onClose }) {
     return [...map.entries()].map(([name, u]) => ({ name, unit: u }));
   }, [received.data]);
 
-  // A known material fixes the unit; "Other…" (or the manager form) opens the unit picker.
-  const unitLocked = isSupervisor && materialChoice && materialChoice !== OTHER;
-
   const resetProject = (id) => {
     setProjectId(id);
-    setMaterialChoice("");
-    setMaterialName("");
-    setUnit("");
+    setItems([emptyItem()]);
   };
 
-  const pickMaterial = (value) => {
-    setMaterialChoice(value);
+  const updateItem = (index, field, value) => {
+    setItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)),
+    );
+  };
+
+  const pickMaterial = (index, value) => {
     if (value === OTHER) {
-      setMaterialName("");
-      setUnit("");
+      updateItem(index, "materialChoice", OTHER);
+      updateItem(index, "materialName", "");
+      updateItem(index, "unit", "");
       return;
     }
-    setMaterialName(value);
     const found = receivedMaterials.find((m) => m.name === value);
-    setUnit(found?.unit || "");
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? { ...item, materialChoice: value, materialName: value, unit: found?.unit || "" }
+          : item,
+      ),
+    );
+  };
+
+  const addLine = () => setItems((prev) => [...prev, emptyItem()]);
+  const removeLine = (index) => {
+    if (items.length <= 1) return;
+    setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const submit = async (event) => {
     event.preventDefault();
     setError("");
     const form = new FormData(event.currentTarget);
+
     if (!projectId) return setError("Select a project");
-    if (!materialName.trim()) return setError("Material is required");
-    if (!unit.trim()) return setError("Unit is required");
-    const quantity = Number(form.get("quantity"));
-    if (!quantity || quantity <= 0) return setError("Enter a valid quantity");
+
+    // Validate each line item
+    const validatedItems = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const name = item.materialName.trim();
+      const unit = item.unit.trim();
+      const qty = Number(item.quantity);
+      if (!name) return setError(`Line ${i + 1}: Material name is required`);
+      if (!unit) return setError(`Line ${i + 1}: Unit is required`);
+      if (!qty || qty <= 0) return setError(`Line ${i + 1}: Enter a valid quantity`);
+      validatedItems.push({
+        materialName: name,
+        quantity: qty,
+        unit,
+        note: item.note?.trim() || undefined,
+      });
+    }
 
     const body = {
       type: isSupervisor ? "Used" : "Received",
       project: projectId,
-      materialName: materialName.trim(),
-      quantity,
-      unit: unit.trim(),
-      note: form.get("note")?.trim() || undefined,
-      date: form.get("date") || undefined,
+      date: form.get("date") || today(),
+      party: party.trim() || undefined,
+      items: validatedItems,
     };
+
     try {
-      await create.mutateAsync(body);
-      announce(isSupervisor ? "Usage logged" : "Delivery recorded");
+      await createBulk.mutateAsync(body);
+      announce(
+        validatedItems.length === 1
+          ? isSupervisor
+            ? "Usage logged"
+            : "Delivery recorded"
+          : `${validatedItems.length} materials ${isSupervisor ? "logged" : "recorded"}`,
+      );
       onClose();
     } catch (err) {
       setError(errMessage(err, "Could not save"));
@@ -116,6 +154,10 @@ export function MaterialForm({ onClose }) {
           </select>
         </Field>
 
+        <Field label="Date">
+          <input name="date" type="date" defaultValue={today()} />
+        </Field>
+
         {/* Managers hand a delivery to the site's supervisor (derived from the project). */}
         {!isSupervisor && projectId && (
           <Field label="Handing over to">
@@ -135,68 +177,121 @@ export function MaterialForm({ onClose }) {
           </Field>
         )}
 
-        {isSupervisor && (
-          <Field label="Material">
-            <select
-              value={materialChoice}
-              onChange={(e) => pickMaterial(e.target.value)}
-              disabled={!projectId}
-              required
-            >
-              <option value="" disabled>
-                {projectId ? "Select material" : "Pick a project first"}
-              </option>
-              {receivedMaterials.map((m) => (
-                <option key={m.name} value={m.name}>
-                  {m.name} ({m.unit})
-                </option>
-              ))}
-              <option value={OTHER}>Other…</option>
-            </select>
-          </Field>
-        )}
-        {(!isSupervisor || materialChoice === OTHER) && (
-          <Field label="Material name">
+        {!isSupervisor && (
+          <Field label="Supplier / Party">
             <input
-              value={materialName}
-              onChange={(e) => setMaterialName(e.target.value)}
-              required
-              placeholder="e.g. Cement"
+              value={party}
+              onChange={(e) => setParty(e.target.value)}
+              placeholder="e.g. Ambuja Cement Ltd"
             />
           </Field>
         )}
 
-        <Field label="Quantity">
-          <input name="quantity" type="number" min="0" step="any" required placeholder="e.g. 50" />
-        </Field>
+        {/* Line items */}
+        <div className="full bulk-items-section">
+          <div className="bulk-items-heading">
+            <strong>Materials ({items.length} {items.length === 1 ? "item" : "items"})</strong>
+            <button type="button" className="small-button" onClick={addLine}>
+              <Plus size={15} />
+              Add line
+            </button>
+          </div>
 
-        <Field label="Unit">
-          {unitLocked ? (
-            <input value={unit} readOnly className="readonly-input" title="Set from the delivery" />
-          ) : (
-            <input
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              required
-              placeholder="bags / MT / litres / local unit"
-            />
-          )}
-        </Field>
+          {items.map((item, index) => (
+            <div className="bulk-item-row" key={item.key}>
+              <span className="bulk-item-num">{index + 1}</span>
 
-        <Field label="Date">
-          <input name="date" type="date" defaultValue={today()} />
-        </Field>
-        <Field label="Notes" className="full">
-          <textarea
-            name="note"
-            rows="2"
-            placeholder={isSupervisor ? "What it was used for (e.g. given to Contractor A)" : "Purpose or reference"}
-          />
-        </Field>
+              {isSupervisor ? (
+                <Field label="Material">
+                  <select
+                    value={item.materialChoice}
+                    onChange={(e) => pickMaterial(index, e.target.value)}
+                    disabled={!projectId}
+                    required
+                  >
+                    <option value="" disabled>
+                      {projectId ? "Select material" : "Pick a project first"}
+                    </option>
+                    {receivedMaterials.map((m) => (
+                      <option key={m.name} value={m.name}>
+                        {m.name} ({m.unit})
+                      </option>
+                    ))}
+                    <option value={OTHER}>Other…</option>
+                  </select>
+                </Field>
+              ) : null}
+
+              {(!isSupervisor || item.materialChoice === OTHER) && (
+                <Field label="Material name">
+                  <input
+                    value={item.materialName}
+                    onChange={(e) => updateItem(index, "materialName", e.target.value)}
+                    required
+                    placeholder="e.g. Cement"
+                  />
+                </Field>
+              )}
+
+              <Field label="Qty">
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  required
+                  placeholder="50"
+                  value={item.quantity}
+                  onChange={(e) => updateItem(index, "quantity", e.target.value)}
+                />
+              </Field>
+
+              <Field label="Unit">
+                {isSupervisor && item.materialChoice && item.materialChoice !== OTHER ? (
+                  <input value={item.unit} readOnly className="readonly-input" />
+                ) : (
+                  <input
+                    value={item.unit}
+                    onChange={(e) => updateItem(index, "unit", e.target.value)}
+                    required
+                    placeholder="bags"
+                  />
+                )}
+              </Field>
+
+              <Field label="Note">
+                <input
+                  value={item.note}
+                  onChange={(e) => updateItem(index, "note", e.target.value)}
+                  placeholder="Optional note"
+                />
+              </Field>
+
+              {items.length > 1 && (
+                <button
+                  type="button"
+                  className="bulk-item-remove"
+                  onClick={() => removeLine(index)}
+                  title="Remove this line"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
         {error && <div className="login-error">{error}</div>}
         <FormActions
           onClose={onClose}
-          label={create.isPending ? "Saving…" : isSupervisor ? "Log usage" : "Record delivery"}
+          label={
+            createBulk.isPending
+              ? "Saving…"
+              : items.length > 1
+                ? `Record ${items.length} materials`
+                : isSupervisor
+                  ? "Log usage"
+                  : "Record delivery"
+          }
         />
       </form>
     </Modal>

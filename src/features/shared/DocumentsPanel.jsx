@@ -15,16 +15,20 @@ import { errMessage } from "../../lib/api.js";
 
 const isSpreadsheet = (mime = "") => /sheet|excel|csv/.test(mime);
 
-export function DocumentsPanel({ parentType, parentId }) {
+export function DocumentsPanel({ parentType, parentId, categoryFilter }) {
   const { user, role } = useAuth();
   const { announce } = useData();
   const { data: docs = [] } = useDocuments(parentType, parentId);
   const upload = useUploadDocument();
   const del = useDeleteDocument(parentType, parentId);
   const fileRef = useRef();
-  const [category, setCategory] = useState("Other");
+  const [category, setCategory] = useState(categoryFilter || "Other");
 
-  const items = docs.filter((d) => d.category !== "Site Photo");
+  const items = docs.filter(
+    (d) =>
+      d.category !== "Site Photo" &&
+      (!categoryFilter || d.category === categoryFilter),
+  );
   const canDelete = (d) => role !== "CONTRACTOR" || d.uploadedBy?.id === user?.id;
 
   const onPick = async (e) => {

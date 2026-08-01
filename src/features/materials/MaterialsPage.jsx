@@ -23,9 +23,15 @@ export function MaterialsPage() {
   const canConfirm = role === "SUPERVISOR" || role === "SUPER_ADMIN";
   const [filter, setFilter] = useState(FILTERS[0]);
   const [issueFor, setIssueFor] = useState(null);
-  const { data: materials = [], isLoading } = useMaterials(
-    filter.value ? { type: filter.value } : {},
-  );
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const queryParams = {};
+  if (filter.value) queryParams.type = filter.value;
+  if (dateFrom) queryParams.from = dateFrom;
+  if (dateTo) queryParams.to = dateTo;
+
+  const { data: materials = [], isLoading } = useMaterials(queryParams);
   const confirm = useConfirmMaterial();
 
   const received = materials.filter((m) => m.type === "Received").length;
@@ -51,6 +57,11 @@ export function MaterialsPage() {
     } catch (err) {
       announce(errMessage(err, "Could not flag issue"));
     }
+  };
+
+  const clearDates = () => {
+    setDateFrom("");
+    setDateTo("");
   };
 
   return (
@@ -85,6 +96,27 @@ export function MaterialsPage() {
               {item.label}
             </button>
           ))}
+        </div>
+        <div className="date-filter">
+          <Field label="From">
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+          </Field>
+          <Field label="To">
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
+          </Field>
+          {(dateFrom || dateTo) && (
+            <button className="secondary-button small" onClick={clearDates}>
+              Clear
+            </button>
+          )}
         </div>
       </div>
       <Section title="Material ledger" eyebrow="LATEST MOVEMENTS" className="ledger-panel">

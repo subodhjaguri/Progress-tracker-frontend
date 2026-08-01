@@ -13,7 +13,7 @@ export function LabourPage() {
   const { data: labour = [], isLoading } = useLabour();
   const [showAdd, setShowAdd] = useState(false);
 
-  if (role !== "CONTRACTOR") return <Navigate to="/" replace />;
+  if (role !== "SUPERVISOR") return <Navigate to="/" replace />;
 
   return (
     <>

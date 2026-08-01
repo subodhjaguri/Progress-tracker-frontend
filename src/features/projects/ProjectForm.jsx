@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
 import { useCreateProject } from "../../api/projects.js";
-import { useManagers, useSupervisors } from "../../api/users.js";
+import { useManagers, useSupervisors, useEngineers } from "../../api/users.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { errMessage } from "../../lib/api.js";
@@ -12,6 +12,7 @@ export function ProjectForm({ onClose }) {
   const isSA = role === "SUPER_ADMIN";
   const managers = useManagers(isSA);
   const supervisors = useSupervisors(isSA || role === "MANAGER");
+  const engineers = useEngineers(isSA || role === "MANAGER");
   const create = useCreateProject();
   const { announce } = useData();
   const [error, setError] = useState("");
@@ -35,6 +36,8 @@ export function ProjectForm({ onClose }) {
     if (isSA) body.manager = form.get("manager");
     const supervisor = form.get("supervisor");
     if (supervisor) body.supervisor = supervisor;
+    const selectedEng = form.get("engineer");
+    if (selectedEng) body.engineers = [selectedEng];
     try {
       await create.mutateAsync(body);
       announce("Project created successfully");
@@ -104,6 +107,16 @@ export function ProjectForm({ onClose }) {
             {(supervisors.data || []).map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Site Engineer (optional)">
+          <select name="engineer" defaultValue="">
+            <option value="">— No engineer —</option>
+            {(engineers.data || []).map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
               </option>
             ))}
           </select>

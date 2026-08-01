@@ -11,6 +11,7 @@ import {
   useManagers,
   useContractors,
   useSupervisors,
+  useEngineers,
   useResetPassword,
   useSetUserStatus,
 } from "../../api/users.js";
@@ -18,7 +19,13 @@ import { initials } from "../../lib/format.js";
 import { errMessage } from "../../lib/api.js";
 
 const tabToMode = (t) =>
-  t === "Managers" ? "manager" : t === "Supervisors" ? "supervisor" : "contractor";
+  t === "Managers"
+    ? "manager"
+    : t === "Supervisors"
+      ? "supervisor"
+      : t === "Engineers"
+        ? "engineer"
+        : "contractor";
 
 export function TeamPage() {
   const { role } = useAuth();
@@ -26,10 +33,10 @@ export function TeamPage() {
   const { announce } = useData();
   const isSA = role === "SUPER_ADMIN";
   const tabs = isSA
-    ? ["Managers", "Contractors", "Supervisors"]
-    : ["Contractors", "Supervisors"];
+    ? ["Managers", "Contractors", "Supervisors", "Engineers"]
+    : ["Contractors", "Supervisors", "Engineers"];
   const [tab, setTab] = useState(tabs[0]);
-  const [createMode, setCreateMode] = useState(null); // "manager" | "contractor" | "supervisor"
+  const [createMode, setCreateMode] = useState(null); // "manager" | "contractor" | "supervisor" | "engineer"
   const [resetResult, setResetResult] = useState(null);
 
   // Only Super Admin and Manager manage the team.
@@ -37,6 +44,7 @@ export function TeamPage() {
   const managers = useManagers(isSA);
   const contractors = useContractors(canManage);
   const supervisors = useSupervisors(canManage);
+  const engineers = useEngineers(canManage);
   const resetPw = useResetPassword();
   const setStatus = useSetUserStatus();
 
@@ -44,7 +52,13 @@ export function TeamPage() {
   if (!canManage) return <Navigate to="/" replace />;
 
   const queryForTab = (t) =>
-    t === "Managers" ? managers : t === "Supervisors" ? supervisors : contractors;
+    t === "Managers"
+      ? managers
+      : t === "Supervisors"
+        ? supervisors
+        : t === "Engineers"
+          ? engineers
+          : contractors;
 
   const handleReset = async (user) => {
     try {

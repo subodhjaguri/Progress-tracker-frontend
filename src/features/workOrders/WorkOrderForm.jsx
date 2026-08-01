@@ -3,12 +3,13 @@ import { Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
 import { useCreateWorkOrder } from "../../api/workOrders.js";
 import { useProjects } from "../../api/projects.js";
-import { useContractors } from "../../api/users.js";
+import { useContractors, useSupervisors } from "../../api/users.js";
 import { useData } from "../../context/DataContext.jsx";
 import { errMessage } from "../../lib/api.js";
 
 export function WorkOrderForm({ onClose }) {
   const projects = useProjects();
+  const supervisors = useSupervisors(true);
   const contractors = useContractors(true);
   const create = useCreateWorkOrder();
   const { announce } = useData();
@@ -22,6 +23,7 @@ export function WorkOrderForm({ onClose }) {
       projectId: form.get("project"),
       title: form.get("title"),
       description: form.get("description")?.trim() || undefined,
+      supervisor: form.get("supervisor"),
       contractor: form.get("contractor"),
       priority: form.get("priority"),
       dueDate: form.get("due")?.trim() || undefined,
@@ -38,7 +40,7 @@ export function WorkOrderForm({ onClose }) {
   return (
     <Modal
       title="Create work order"
-      subtitle="Define the work and assign the execution owner."
+      subtitle="Define the work, assign the supervisor, and link the contractor."
       onClose={onClose}
       wide
     >
@@ -58,7 +60,19 @@ export function WorkOrderForm({ onClose }) {
             ))}
           </select>
         </Field>
-        <Field label="Contractor">
+        <Field label="Supervisor (Site Lead)">
+          <select name="supervisor" required defaultValue="">
+            <option value="" disabled>
+              Select supervisor
+            </option>
+            {(supervisors.data || []).map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Contractor (Record / Billing)">
           <select name="contractor" required defaultValue="">
             <option value="" disabled>
               Select contractor

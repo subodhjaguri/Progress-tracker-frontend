@@ -15,8 +15,8 @@ export function WorkOrdersPage() {
   const { data: orders = [], isLoading } = useWorkOrders();
   const [filter, setFilter] = useState("All");
 
-  // Supervisors have no work-order access (nav hides it; guard the direct URL too).
-  if (role === "SUPERVISOR") return <Navigate to="/" replace />;
+  // Contractors have no operational work-order access.
+  if (role === "CONTRACTOR") return <Navigate to="/" replace />;
 
   const shown = filter === "All" ? orders : orders.filter((order) => order.status === filter);
 
@@ -86,7 +86,7 @@ export function WorkOrdersPage() {
                 <span>
                   <strong>{order.title}</strong>
                   <small>
-                    {order.contractor} · {order.priority}
+                    {order.supervisor} · {order.priority}
                   </small>
                 </span>
               </div>

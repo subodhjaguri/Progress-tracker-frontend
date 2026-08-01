@@ -22,12 +22,12 @@ const statusClass = (s) => s.toLowerCase().replace(" ", "-");
 
 export function AttendancePage() {
   const { role } = useAuth();
-  if (role === "SUPERVISOR") return <Navigate to="/" replace />;
-  return role === "CONTRACTOR" ? <ContractorAttendance /> : <ManagerAttendance />;
+  if (role === "CONTRACTOR") return <Navigate to="/" replace />;
+  return role === "SUPERVISOR" ? <SupervisorAttendance /> : <ManagerAttendance />;
 }
 
-// ---- Contractor: mark attendance for their labour on a work order ----
-function ContractorAttendance() {
+// ---- Supervisor: mark attendance for their labour on a work order ----
+function SupervisorAttendance() {
   const { announce } = useData();
   const navigate = useNavigate();
   const [date, setDate] = useState(today());
@@ -190,9 +190,9 @@ function ManagerAttendance() {
   return (
     <>
       <PageHeading
-        eyebrow="ATTENDANCE"
+        eyebrow="ATTENDANCE (READ-ONLY)"
         title="Site attendance"
-        text="Review who was on site, by project and date."
+        text="Review who was on site, by project and date. Marking attendance is managed by the site supervisor."
       />
       <div className="report-controls">
         <Field label="Project">

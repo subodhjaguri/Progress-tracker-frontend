@@ -18,16 +18,22 @@ export const navItems = [
     to: "/work-orders",
     label: "Work Orders",
     icon: ClipboardList,
-    roles: ["SUPER_ADMIN", "MANAGER", "CONTRACTOR"],
+    roles: ["SUPER_ADMIN", "MANAGER", "SUPERVISOR"],
   },
   {
     to: "/attendance",
     label: "Attendance",
     icon: Users,
-    roles: ["SUPER_ADMIN", "MANAGER", "CONTRACTOR"],
+    roles: ["SUPER_ADMIN", "MANAGER", "SUPERVISOR"],
   },
-  { to: "/labour", label: "Labour", icon: HardHat, roles: ["CONTRACTOR"] },
+  { to: "/labour", label: "Labour", icon: HardHat, roles: ["SUPERVISOR"] },
   { to: "/materials", label: "Materials", icon: Boxes },
+  {
+    to: "/engineering",
+    label: "Engineering",
+    icon: Compass,
+    roles: ["ENGINEER", "SUPER_ADMIN", "MANAGER"],
+  },
   { to: "/team", label: "Team", icon: UsersRound, roles: ["SUPER_ADMIN", "MANAGER"] },
   { to: "/reports", label: "Daily Report", icon: ChartNoAxesCombined },
   { to: "/guide", label: "How it works", icon: Compass, roles: ["SUPER_ADMIN", "MANAGER"] },
@@ -36,6 +42,8 @@ export const navItems = [
 export const roles = {
   "Super Admin": { name: "Subodh Jaguri", initials: "SJ", caption: "Business owner" },
   Manager: { name: "Priya Sharma", initials: "PS", caption: "Project manager" },
+  Supervisor: { name: "Amit Kumar", initials: "AK", caption: "Site supervisor" },
+  Engineer: { name: "Rajesh Verma", initials: "RV", caption: "Structural engineer" },
   Contractor: { name: "Vikram Joshi", initials: "VJ", caption: "Apex Civil Works" },
 };
 

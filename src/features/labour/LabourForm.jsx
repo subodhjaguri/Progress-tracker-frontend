@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
 import { useCreateLabour, useUpdateLabour } from "../../api/labour.js";
+import { useContractors } from "../../api/users.js";
 import { useData } from "../../context/DataContext.jsx";
 import { SKILLS } from "../../lib/constants.js";
 import { errMessage } from "../../lib/api.js";
 
 export function LabourForm({ onClose, labour }) {
   const editing = !!labour;
+  const contractors = useContractors(true);
   const create = useCreateLabour();
   const update = useUpdateLabour();
   const { announce } = useData();
@@ -23,6 +25,8 @@ export function LabourForm({ onClose, labour }) {
     if (mobile) body.mobile = mobile;
     const aadhaar = form.get("aadhaarNumber")?.trim();
     if (aadhaar) body.aadhaarNumber = aadhaar;
+    const contractor = form.get("contractor");
+    if (contractor) body.contractor = contractor;
     try {
       if (editing) await update.mutateAsync({ id: labour.id, body });
       else await create.mutateAsync(body);
@@ -43,6 +47,16 @@ export function LabourForm({ onClose, labour }) {
           <select name="skill" defaultValue={labour?.skill || "Helper"}>
             {SKILLS.map((s) => (
               <option key={s}>{s}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Contractor (optional reference)">
+          <select name="contractor" defaultValue={labour?.contractor?.id || ""}>
+            <option value="">— Unlinked —</option>
+            {(contractors.data || []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
             ))}
           </select>
         </Field>

@@ -6,11 +6,12 @@ import { PhotosPanel } from "../shared/PhotosPanel.jsx";
 import { DocumentsPanel } from "../shared/DocumentsPanel.jsx";
 import { CommentsPanel } from "../shared/CommentsPanel.jsx";
 import { LabourTasksPanel } from "./LabourTasksPanel.jsx";
+import { SubTasksPanel } from "./SubTasksPanel.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useWorkOrder, useWorkOrderUpdates } from "../../api/workOrders.js";
 
-const TABS = ["Updates", "Labour Tasks", "Photos", "Documents", "Comments"];
+const TABS = ["Subtasks", "Updates", "Labour Tasks", "Photos", "Documents", "Comments"];
 
 export function WorkOrderDetail() {
   const { id } = useParams();
@@ -19,7 +20,7 @@ export function WorkOrderDetail() {
   const { role } = useAuth();
   const { data: order, isLoading } = useWorkOrder(id);
   const { data: updates = [] } = useWorkOrderUpdates(id);
-  const [tab, setTab] = useState("Updates");
+  const [tab, setTab] = useState("Subtasks");
 
   if (isLoading) {
     return (
@@ -65,9 +66,14 @@ export function WorkOrderDetail() {
       </div>
       <div className="order-overview">
         <div>
+          <span>Supervisor</span>
+          <strong>{order.supervisor}</strong>
+          <small>Execution lead</small>
+        </div>
+        <div>
           <span>Contractor</span>
           <strong>{order.contractor}</strong>
-          <small>Assigned owner</small>
+          <small>Record / Billing</small>
         </div>
         <div>
           <span>Priority</span>
@@ -96,6 +102,7 @@ export function WorkOrderDetail() {
           </button>
         ))}
       </div>
+      {tab === "Subtasks" && <SubTasksPanel workOrderId={order.id} canManage={role === "SUPERVISOR" || role === "SUPER_ADMIN" || role === "MANAGER"} />}
       {tab === "Updates" && (
         <Section
           title="Progress updates"
@@ -122,7 +129,7 @@ export function WorkOrderDetail() {
         </Section>
       )}
       {tab === "Labour Tasks" && (
-        <LabourTasksPanel workOrderId={order.id} canManage={role === "CONTRACTOR"} />
+        <LabourTasksPanel workOrderId={order.id} canManage={role === "SUPERVISOR"} />
       )}
       {tab === "Photos" && <PhotosPanel parentType="WorkOrder" parentId={order.id} />}
       {tab === "Documents" && <DocumentsPanel parentType="WorkOrder" parentId={order.id} />}

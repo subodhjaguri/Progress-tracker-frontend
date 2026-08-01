@@ -33,6 +33,14 @@ export function useSupervisors(enabled = true) {
   });
 }
 
+export function useEngineers(enabled = true) {
+  return useQuery({
+    queryKey: ["engineers"],
+    queryFn: async () => unwrap(await api.get("/engineers")),
+    enabled,
+  });
+}
+
 export function useCreateManager() {
   const qc = useQueryClient();
   return useMutation({
@@ -54,6 +62,14 @@ export function useCreateSupervisor() {
   return useMutation({
     mutationFn: async (body) => unwrap(await api.post("/supervisors", body)),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["supervisors"] }),
+  });
+}
+
+export function useCreateEngineer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body) => unwrap(await api.post("/engineers", body)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["engineers"] }),
   });
 }
 

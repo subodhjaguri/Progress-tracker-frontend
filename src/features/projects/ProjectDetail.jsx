@@ -16,7 +16,7 @@ import { PhotosPanel } from "../shared/PhotosPanel.jsx";
 import { DocumentsPanel } from "../shared/DocumentsPanel.jsx";
 import { CommentsPanel } from "../shared/CommentsPanel.jsx";
 import { useProject, useUpdateProject } from "../../api/projects.js";
-import { useSupervisors } from "../../api/users.js";
+import { useSupervisors, useEngineers } from "../../api/users.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { errMessage } from "../../lib/api.js";
@@ -33,6 +33,7 @@ export function ProjectDetail() {
 
   const canAssign = role === "SUPER_ADMIN" || role === "MANAGER";
   const supervisors = useSupervisors(canAssign);
+  const engineers = useEngineers(canAssign);
   const updateProject = useUpdateProject(id);
 
   const assignSupervisor = async (event) => {
@@ -42,6 +43,16 @@ export function ProjectDetail() {
       announce(value ? "Supervisor assigned" : "Supervisor removed");
     } catch (err) {
       announce(errMessage(err, "Could not update supervisor"));
+    }
+  };
+
+  const assignEngineer = async (event) => {
+    const value = event.target.value;
+    try {
+      await updateProject.mutateAsync({ engineers: value ? [value] : [] });
+      announce(value ? "Engineer assigned" : "Engineer removed");
+    } catch (err) {
+      announce(errMessage(err, "Could not update engineer"));
     }
   };
 
@@ -131,6 +142,27 @@ export function ProjectDetail() {
             <strong>{project.supervisor || "—"}</strong>
           )}
           <small>Material custodian</small>
+        </div>
+        <div>
+          <span>Site engineer</span>
+          {canAssign ? (
+            <select
+              className="cell-select"
+              value={project.engineerIds?.[0] || ""}
+              onChange={assignEngineer}
+              disabled={updateProject.isPending}
+            >
+              <option value="">— None —</option>
+              {(engineers.data || []).map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <strong>{project.engineers?.join(", ") || "—"}</strong>
+          )}
+          <small>Technical vault lead</small>
         </div>
         <div>
           <span>Client</span>
