@@ -9,19 +9,24 @@ import {
   PackageCheck,
   CircleAlert,
   TrendingUp,
+  UserRoundCheck,
+  Clock3,
+  X,
 } from "lucide-react";
-import { Section, StatusPill } from "../../components/index.js";
+import { Section, StatusPill, StatCard, Field } from "../../components/index.js";
 import { OrderRow } from "./OrderRow.jsx";
 import { PhotosPanel } from "../shared/PhotosPanel.jsx";
 import { DocumentsPanel } from "../shared/DocumentsPanel.jsx";
 import { CommentsPanel } from "../shared/CommentsPanel.jsx";
 import { useProject, useUpdateProject } from "../../api/projects.js";
 import { useSupervisors, useEngineers } from "../../api/users.js";
+import { useAttendance, useAttendanceSummary } from "../../api/attendance.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { errMessage } from "../../lib/api.js";
+import { initials } from "../../lib/format.js";
 
-const TABS = ["Overview", "Work Orders", "Updates", "Photos", "Documents", "Comments"];
+const TABS = ["Overview", "Work Orders", "Attendance", "Updates", "Photos", "Documents", "Comments"];
 
 export function ProjectDetail() {
   const { id } = useParams();
@@ -245,6 +250,7 @@ export function ProjectDetail() {
           </div>
         </Section>
       )}
+      {tab === "Attendance" && <ProjectAttendancePanel projectId={project.id} />}
       {tab === "Updates" && (
         <Section title="Progress timeline">
           <div className="empty-inline">
@@ -257,6 +263,65 @@ export function ProjectDetail() {
       {tab === "Photos" && <PhotosPanel parentType="Project" parentId={project.id} />}
       {tab === "Documents" && <DocumentsPanel parentType="Project" parentId={project.id} />}
       {tab === "Comments" && <CommentsPanel parentType="Project" parentId={project.id} />}
+    </>
+  );
+}
+
+function ProjectAttendancePanel({ projectId }) {
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const records = useAttendance({ project: projectId, date });
+  const summary = useAttendanceSummary({ scope: "project", id: projectId, date });
+
+  const s = summary.data || { present: 0, absent: 0, halfDay: 0, total: 0 };
+  const list = records.data || [];
+
+  return (
+    <>
+      <div className="report-controls" style={{ marginBottom: "1rem" }}>
+        <Field label="Date">
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </Field>
+      </div>
+      <div className="stats-grid attendance-stats" style={{ marginBottom: "1.5rem" }}>
+        <StatCard label="Total" value={s.total} icon={HardHat} tone="green" />
+        <StatCard label="Present" value={s.present} icon={UserRoundCheck} tone="blue" />
+        <StatCard label="Absent" value={s.absent} icon={X} tone="red" />
+        <StatCard label="Half day" value={s.halfDay} icon={Clock3} tone="amber" />
+      </div>
+      <Section title="Daily site attendance" className="attendance-panel">
+        {list.length === 0 ? (
+          <div className="empty-inline">
+            <strong>No attendance recorded</strong>
+            <p>Nothing was marked for this project on this date.</p>
+          </div>
+        ) : (
+          <>
+            <div className="attendance-table-header">
+              <span>Labour</span>
+              <span>Skill</span>
+              <span>Work order</span>
+              <span>Status</span>
+            </div>
+            <div className="attendance-table">
+              {list.map((r) => (
+                <div className="attendance-person" key={r.id}>
+                  <div className="person-cell">
+                    <div className="avatar">{initials(r.labour?.name || "")}</div>
+                    <span>
+                      <strong>{r.labour?.name || "—"}</strong>
+                    </span>
+                  </div>
+                  <span>{r.labour?.skill || "—"}</span>
+                  <span>{r.workOrder?.title || "Direct Site"}</span>
+                  <span className={`att-status ${(r.status || "").toLowerCase().replace(" ", "-")}`}>
+                    {r.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </Section>
     </>
   );
 }

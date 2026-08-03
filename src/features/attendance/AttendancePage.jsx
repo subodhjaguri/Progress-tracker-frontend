@@ -31,18 +31,18 @@ function SupervisorAttendance() {
   const { announce } = useData();
   const navigate = useNavigate();
   const [date, setDate] = useState(today());
-  const [workOrderId, setWorkOrderId] = useState("");
+  const [projectId, setProjectId] = useState("");
   const [marks, setMarks] = useState({});
   const [savedLabourIds, setSavedLabourIds] = useState(new Set());
 
-  const workOrders = useWorkOrders();
+  const projects = useProjects();
   const labour = useLabour();
-  const existing = useAttendance({ date });
+  const existing = useAttendance({ project: projectId, date });
   const mark = useMarkAttendance();
 
   useEffect(() => {
-    if (!workOrderId && workOrders.data?.length) setWorkOrderId(workOrders.data[0].id);
-  }, [workOrders.data, workOrderId]);
+    if (!projectId && projects.data?.length) setProjectId(projects.data[0].id);
+  }, [projects.data, projectId]);
 
   useEffect(() => {
     const map = {};
@@ -59,7 +59,7 @@ function SupervisorAttendance() {
   }, [existing.data]);
 
   const roster = labour.data || [];
-  const selectedWO = (workOrders.data || []).find((w) => w.id === workOrderId);
+  const selectedProj = (projects.data || []).find((p) => p.id === projectId);
   const counts = { Present: 0, Absent: 0, "Half Day": 0 };
   roster.forEach((l) => {
     if (marks[l.id]) counts[marks[l.id]] += 1;
@@ -69,7 +69,7 @@ function SupervisorAttendance() {
   const allAlreadyMarked = roster.length > 0 && unsubmittedRoster.length === 0;
 
   const save = async () => {
-    if (!selectedWO) return announce("Select a work order first");
+    if (!selectedProj) return announce("Select a project first");
     const entries = unsubmittedRoster
       .filter((l) => marks[l.id])
       .map((l) => ({ labour: l.id, status: marks[l.id] }));
@@ -77,8 +77,7 @@ function SupervisorAttendance() {
     try {
       await mark.mutateAsync({
         date,
-        project: selectedWO.projectId,
-        workOrder: selectedWO.id,
+        project: selectedProj.id,
         entries,
       });
       announce("Attendance saved");
@@ -95,7 +94,7 @@ function SupervisorAttendance() {
         text={
           allAlreadyMarked
             ? "Attendance for this date has already been marked and locked."
-            : "Choose a work order and date, then mark your workforce."
+            : "Choose a project and date, then mark your workforce."
         }
         action={
           <button className="primary-button" onClick={save} disabled={mark.isPending || allAlreadyMarked}>
@@ -108,12 +107,12 @@ function SupervisorAttendance() {
         <Field label="Date">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
-        <Field label="Work order">
-          <select value={workOrderId} onChange={(e) => setWorkOrderId(e.target.value)}>
-            {(workOrders.data || []).length === 0 && <option value="">No work orders assigned</option>}
-            {(workOrders.data || []).map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.title} · {w.projectName}
+        <Field label="Project">
+          <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+            {(projects.data || []).length === 0 && <option value="">No projects assigned</option>}
+            {(projects.data || []).map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
               </option>
             ))}
           </select>
@@ -257,7 +256,7 @@ function ManagerAttendance() {
                     </span>
                   </div>
                   <span>{r.labour?.skill || "—"}</span>
-                  <span>{r.workOrder?.title || "—"}</span>
+                  <span>{r.workOrder?.title || "Direct Site"}</span>
                   <span className={`att-status ${statusClass(r.status)}`}>{r.status}</span>
                 </div>
               ))}
