@@ -7,6 +7,7 @@ import { WorkOrdersPage } from "../features/workOrders/WorkOrdersPage.jsx";
 import { WorkOrderDetail } from "../features/workOrders/WorkOrderDetail.jsx";
 import { AttendancePage } from "../features/attendance/AttendancePage.jsx";
 import { MaterialsPage } from "../features/materials/MaterialsPage.jsx";
+import { PaymentsPage } from "../features/payments/PaymentsPage.jsx";
 import { DailyReport } from "../features/reports/DailyReport.jsx";
 import { TeamPage } from "../features/team/TeamPage.jsx";
 import { ContractorDetail } from "../features/team/ContractorDetail.jsx";
@@ -25,6 +26,7 @@ export function AppRoutes() {
       <Route path="/work-orders/:id" element={<WorkOrderDetail />} />
       <Route path="/attendance" element={<AttendancePage />} />
       <Route path="/materials" element={<MaterialsPage />} />
+      <Route path="/payments" element={<PaymentsPage />} />
       <Route path="/engineering" element={<EngineeringPage />} />
       <Route path="/team" element={<TeamPage />} />
       <Route path="/contractors/:id" element={<ContractorDetail />} />

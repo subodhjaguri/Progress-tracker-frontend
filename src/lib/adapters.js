@@ -55,6 +55,7 @@ export function adaptWorkOrder(w) {
     dueDate: fmtDate(w.dueDate),
     status: w.status,
     progress: w.progress ?? 0,
+    weightagePercentage: w.weightagePercentage ?? 0,
     updated: w.lastUpdateAt ? fmtDate(w.lastUpdateAt) : "—",
   };
 }
@@ -69,10 +70,14 @@ export function adaptMaterial(m) {
     quantity: m.quantity,
     unit: m.unit,
     type: m.type,
+    status: m.status || m.type,
     party: m.party,
     note: m.note,
     receiptStatus: m.receiptStatus,
     confirmedBy: m.confirmedBy?.name,
+    requestedBy: m.requestedBy?.name || m.requestedBy,
+    providedBy: m.providedBy?.name || m.providedBy,
+    acknowledgedBy: m.acknowledgedBy?.name || m.acknowledgedBy,
     receiptNote: m.receiptNote,
     projectId: project?.id,
     projectName: project?.name,

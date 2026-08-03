@@ -50,3 +50,21 @@ export async function downloadDocument(doc) {
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+export function useApproveSuperAdminDocument(parentType, parentId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status, note }) =>
+      unwrap(await api.patch(`/documents/${id}/approve-super-admin`, { status, note })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["documents", parentType, parentId] }),
+  });
+}
+
+export function useApproveManagerDocument(parentType, parentId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status, note }) =>
+      unwrap(await api.patch(`/documents/${id}/approve-manager`, { status, note })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["documents", parentType, parentId] }),
+  });
+}

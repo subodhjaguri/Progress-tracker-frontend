@@ -27,6 +27,7 @@ export function WorkOrderForm({ onClose }) {
       contractor: form.get("contractor"),
       priority: form.get("priority"),
       dueDate: form.get("due")?.trim() || undefined,
+      weightagePercentage: Number(form.get("weightagePercentage") || 0),
     };
     try {
       await create.mutateAsync(body);
@@ -40,7 +41,7 @@ export function WorkOrderForm({ onClose }) {
   return (
     <Modal
       title="Create work order"
-      subtitle="Define the work, assign the supervisor, and link the contractor."
+      subtitle="Define the work, assign the supervisor, and set the weightage percentage."
       onClose={onClose}
       wide
     >
@@ -94,6 +95,9 @@ export function WorkOrderForm({ onClose }) {
             <option>High</option>
             <option>Critical</option>
           </select>
+        </Field>
+        <Field label="Weightage Share (%)">
+          <input name="weightagePercentage" type="number" min="0" max="100" defaultValue="0" placeholder="e.g. 25" />
         </Field>
         <Field label="Due date">
           <input name="due" type="date" />

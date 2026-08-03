@@ -5,12 +5,14 @@ import { StatCard, Section, StatusPill, Modal, Field } from "../../components/in
 import { FormActions } from "../shared/FormActions.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
-import { useMaterials, useConfirmMaterial } from "../../api/materials.js";
+import { useMaterials, useConfirmMaterial, useRequestMaterial, useProvideMaterial, useAcknowledgeMaterial } from "../../api/materials.js";
+import { useProjects } from "../../api/projects.js";
 import { movementLabel } from "../../lib/format.js";
 import { errMessage } from "../../lib/api.js";
 
 const FILTERS = [
   { label: "All", value: null },
+  { label: "Requests", value: "Requested" },
   { label: "Delivery", value: "Received" },
   { label: "Used", value: "Used" },
 ];
@@ -18,11 +20,14 @@ const FILTERS = [
 export function MaterialsPage() {
   const { role } = useAuth();
   const { setModal, announce } = useData();
+  const projects = useProjects();
   const canRecord = role !== "CONTRACTOR";
   const isSupervisor = role === "SUPERVISOR";
+  const isManager = role === "MANAGER" || role === "SUPER_ADMIN";
   const canConfirm = role === "SUPERVISOR" || role === "SUPER_ADMIN";
   const [filter, setFilter] = useState(FILTERS[0]);
   const [issueFor, setIssueFor] = useState(null);
+  const [requestModal, setRequestModal] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -33,10 +38,49 @@ export function MaterialsPage() {
 
   const { data: materials = [], isLoading } = useMaterials(queryParams);
   const confirm = useConfirmMaterial();
+  const requestMat = useRequestMaterial();
+  const provideMat = useProvideMaterial();
+  const acknowledgeMat = useAcknowledgeMaterial();
 
   const received = materials.filter((m) => m.type === "Received").length;
   const used = materials.filter((m) => m.type === "Used").length;
   const distinct = new Set(materials.map((m) => m.materialName)).size;
+
+  const handleProvide = async (m) => {
+    try {
+      await provideMat.mutateAsync(m.id);
+      announce("Material marked as provided");
+    } catch (err) {
+      announce(errMessage(err, "Could not provide material"));
+    }
+  };
+
+  const handleAcknowledge = async (m) => {
+    try {
+      await acknowledgeMat.mutateAsync(m.id);
+      announce("Material delivery acknowledged");
+    } catch (err) {
+      announce(errMessage(err, "Could not acknowledge delivery"));
+    }
+  };
+
+  const submitRequest = async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    try {
+      await requestMat.mutateAsync({
+        project: form.get("project"),
+        materialName: form.get("materialName"),
+        quantity: Number(form.get("quantity")),
+        unit: form.get("unit"),
+        note: form.get("note"),
+      });
+      announce("Material request submitted");
+      setRequestModal(false);
+    } catch (err) {
+      announce(errMessage(err, "Could not submit request"));
+    }
+  };
 
   const handleConfirm = async (m) => {
     try {
@@ -69,13 +113,21 @@ export function MaterialsPage() {
       <PageHeading
         eyebrow="MATERIALS"
         title="Know what came in and what got used"
-        text="A chronological material ledger across every active site."
+        text="Request materials, provide requirements, and track site consumption."
         action={
           canRecord ? (
-            <button className="primary-button" onClick={() => setModal({ type: "material" })}>
-              <Plus size={18} />
-              {isSupervisor ? "Log usage" : "Record delivery"}
-            </button>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              {isSupervisor && (
+                <button className="secondary-button" onClick={() => setRequestModal(true)}>
+                  <Plus size={18} />
+                  Request Material
+                </button>
+              )}
+              <button className="primary-button" onClick={() => setModal({ type: "material" })}>
+                <Plus size={18} />
+                {isSupervisor ? "Log usage" : "Record delivery"}
+              </button>
+            </div>
           ) : undefined
         }
       />
@@ -124,8 +176,8 @@ export function MaterialsPage() {
           <span>Date</span>
           <span>Material</span>
           <span>Project</span>
-          <span>Movement</span>
-          <span>Party / Receipt</span>
+          <span>Movement / Status</span>
+          <span>Action / Receipt</span>
         </div>
         <div className="ledger-list">
           {isLoading && (
@@ -148,13 +200,30 @@ export function MaterialsPage() {
               </div>
               <span>{m.projectName || "—"}</span>
               <div>
-                <StatusPill value={m.type} label={movementLabel(m.type)} />
+                <StatusPill value={m.status || m.type} label={movementLabel(m.type)} />
                 <strong>
                   {m.quantity} {m.unit}
                 </strong>
               </div>
               <div className="ledger-receipt">
-                <span>{m.party || "—"}</span>
+                <span>{m.party || m.requestedBy ? `Requested by ${m.requestedBy}` : "—"}</span>
+                {m.type === "Requested" && (
+                  <div className="receipt-line">
+                    {m.status === "Requested" && isManager && (
+                      <button className="mini-button" onClick={() => handleProvide(m)}>
+                        Provide Material
+                      </button>
+                    )}
+                    {m.status === "Provided" && (isSupervisor || isManager) && (
+                      <button className="mini-button" onClick={() => handleAcknowledge(m)}>
+                        Acknowledge Delivery
+                      </button>
+                    )}
+                    {m.status === "Acknowledged" && (
+                      <small style={{ color: "#16a34a" }}>Delivered & Acknowledged</small>
+                    )}
+                  </div>
+                )}
                 {m.type === "Received" && (
                   <div className="receipt-line">
                     <span className={`receipt-badge ${(m.receiptStatus || "Pending").toLowerCase()}`}>
@@ -181,6 +250,34 @@ export function MaterialsPage() {
           ))}
         </div>
       </Section>
+
+      {requestModal && (
+        <Modal title="Request Material" subtitle="Request materials for your project site" onClose={() => setRequestModal(false)}>
+          <form className="form-grid" onSubmit={submitRequest}>
+            <Field label="Project">
+              <select name="project" required defaultValue="">
+                <option value="" disabled>Select project</option>
+                {(projects.data || []).map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Material Name">
+              <input name="materialName" required placeholder="e.g. Bricks, Cement, Steel" />
+            </Field>
+            <Field label="Quantity">
+              <input name="quantity" type="number" min="1" required placeholder="100" />
+            </Field>
+            <Field label="Unit">
+              <input name="unit" required placeholder="bags / tons / pcs" />
+            </Field>
+            <Field label="Note" className="full">
+              <textarea name="note" rows="2" placeholder="Urgency or site delivery details" />
+            </Field>
+            <FormActions onClose={() => setRequestModal(false)} label={requestMat.isPending ? "Submitting…" : "Submit Request"} />
+          </form>
+        </Modal>
+      )}
 
       {issueFor && (
         <Modal

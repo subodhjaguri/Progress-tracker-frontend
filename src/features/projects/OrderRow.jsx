@@ -9,7 +9,7 @@ export function OrderRow({ order, onClick }) {
       <div className="order-name">
         <span>{order.code}</span>
         <strong>{order.title}</strong>
-        <small>{order.contractor}</small>
+        <small>{order.contractor} · {order.weightagePercentage || 0}% weightage</small>
       </div>
       <StatusPill value={order.status} />
       <div className="row-progress">

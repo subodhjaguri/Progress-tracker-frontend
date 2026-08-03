@@ -48,3 +48,36 @@ export function useConfirmMaterial() {
     },
   });
 }
+
+export function useRequestMaterial() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body) => unwrap(await api.post("/materials/request", body)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["materials"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useProvideMaterial() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id) => unwrap(await api.patch(`/materials/${id}/provide`)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["materials"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useAcknowledgeMaterial() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id) => unwrap(await api.patch(`/materials/${id}/acknowledge`)),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["materials"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
