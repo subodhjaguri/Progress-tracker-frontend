@@ -33,6 +33,7 @@ function SupervisorAttendance() {
   const [date, setDate] = useState(today());
   const [workOrderId, setWorkOrderId] = useState("");
   const [marks, setMarks] = useState({});
+  const [savedLabourIds, setSavedLabourIds] = useState(new Set());
 
   const workOrders = useWorkOrders();
   const labour = useLabour();
@@ -45,10 +46,16 @@ function SupervisorAttendance() {
 
   useEffect(() => {
     const map = {};
+    const saved = new Set();
     (existing.data || []).forEach((r) => {
-      if (r.labour?.id) map[r.labour.id] = r.status;
+      const lId = r.labour?.id || r.labour?._id || r.labour;
+      if (lId) {
+        map[lId] = r.status;
+        saved.add(String(lId));
+      }
     });
     setMarks(map);
+    setSavedLabourIds(saved);
   }, [existing.data]);
 
   const roster = labour.data || [];
@@ -58,12 +65,15 @@ function SupervisorAttendance() {
     if (marks[l.id]) counts[marks[l.id]] += 1;
   });
 
+  const unsubmittedRoster = roster.filter((l) => !savedLabourIds.has(String(l.id)));
+  const allAlreadyMarked = roster.length > 0 && unsubmittedRoster.length === 0;
+
   const save = async () => {
     if (!selectedWO) return announce("Select a work order first");
-    const entries = roster
+    const entries = unsubmittedRoster
       .filter((l) => marks[l.id])
       .map((l) => ({ labour: l.id, status: marks[l.id] }));
-    if (!entries.length) return announce("Mark at least one labourer");
+    if (!entries.length) return announce("Mark at least one unsubmitted labourer");
     try {
       await mark.mutateAsync({
         date,
@@ -82,11 +92,15 @@ function SupervisorAttendance() {
       <PageHeading
         eyebrow="ATTENDANCE"
         title="Mark today's attendance"
-        text="Choose a work order and date, then mark your workforce."
+        text={
+          allAlreadyMarked
+            ? "Attendance for this date has already been marked and locked."
+            : "Choose a work order and date, then mark your workforce."
+        }
         action={
-          <button className="primary-button" onClick={save} disabled={mark.isPending}>
+          <button className="primary-button" onClick={save} disabled={mark.isPending || allAlreadyMarked}>
             <CircleCheckBig size={18} />
-            {mark.isPending ? "Saving…" : "Save attendance"}
+            {mark.isPending ? "Saving…" : allAlreadyMarked ? "Attendance marked" : "Save attendance"}
           </button>
         }
       />
@@ -113,7 +127,7 @@ function SupervisorAttendance() {
       </div>
       <Section
         title="Your workforce"
-        eyebrow="DAILY ATTENDANCE"
+        eyebrow={allAlreadyMarked ? "DAILY ATTENDANCE (LOCKED)" : "DAILY ATTENDANCE"}
         action={
           <button className="small-button" onClick={() => navigate("/labour")}>
             Manage labour
@@ -138,32 +152,36 @@ function SupervisorAttendance() {
               <span>Attendance</span>
             </div>
             <div className="attendance-table">
-              {roster.map((person) => (
-                <div className="attendance-person" key={person.id}>
-                  <div className="person-cell">
-                    <div className="avatar">{initials(person.name)}</div>
-                    <span>
-                      <strong>{person.name}</strong>
-                      <small>
-                        {person.aadhaarNumber ? `Aadhaar ${person.aadhaarNumber}` : "—"}
-                      </small>
-                    </span>
+              {roster.map((person) => {
+                const isLocked = savedLabourIds.has(String(person.id));
+                return (
+                  <div className="attendance-person" key={person.id}>
+                    <div className="person-cell">
+                      <div className="avatar">{initials(person.name)}</div>
+                      <span>
+                        <strong>{person.name}</strong>
+                        <small>
+                          {person.aadhaarNumber ? `Aadhaar ${person.aadhaarNumber}` : "—"}
+                        </small>
+                      </span>
+                    </div>
+                    <span>{person.skill}</span>
+                    <span>{person.mobile || "—"}</span>
+                    <div className="attendance-selector">
+                      {ATTENDANCE_STATUSES.map((s) => (
+                        <button
+                          key={s}
+                          disabled={isLocked}
+                          className={marks[person.id] === s ? statusClass(s) : ""}
+                          onClick={() => !isLocked && setMarks((m) => ({ ...m, [person.id]: s }))}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <span>{person.skill}</span>
-                  <span>{person.mobile || "—"}</span>
-                  <div className="attendance-selector">
-                    {ATTENDANCE_STATUSES.map((s) => (
-                      <button
-                        key={s}
-                        className={marks[person.id] === s ? statusClass(s) : ""}
-                        onClick={() => setMarks((m) => ({ ...m, [person.id]: s }))}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}

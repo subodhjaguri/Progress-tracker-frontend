@@ -38,17 +38,17 @@ export function adaptWorkOrder(w) {
   if (!w) return null;
   const project = typeof w.projectId === "object" && w.projectId ? w.projectId : null;
   return {
-    id: w.id,
+    id: w.id || w._id,
     code: w.code,
     title: w.title,
     description: w.description,
-    projectId: project ? project.id : w.projectId,
+    projectId: project ? (project.id || project._id) : w.projectId,
     projectName: project ? project.name : undefined,
     projectCode: project ? project.code : undefined,
     supervisor: w.supervisor?.name || "—",
-    supervisorId: w.supervisor?.id || "",
+    supervisorId: w.supervisor?.id || w.supervisor?._id || "",
     contractor: w.contractor?.name || "—",
-    contractorId: w.contractor?.id || "",
+    contractorId: w.contractor?.id || w.contractor?._id || "",
     reporter: w.reporter?.name,
     createdBy: w.createdBy?.name || "—",
     priority: w.priority || "Medium",
