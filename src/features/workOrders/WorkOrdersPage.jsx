@@ -27,10 +27,12 @@ export function WorkOrdersPage() {
         title="Work that moves the site forward"
         text="Assign responsibilities, track progress and resolve blockers."
         action={
-          <button className="primary-button" onClick={() => setModal({ type: "work-order" })}>
-            <Plus size={18} />
-            New work order
-          </button>
+          (role === "SUPER_ADMIN" || role === "MANAGER") && (
+            <button className="primary-button" onClick={() => setModal({ type: "work-order" })}>
+              <Plus size={18} />
+              New work order
+            </button>
+          )
         }
       />
       <div className="toolbar">

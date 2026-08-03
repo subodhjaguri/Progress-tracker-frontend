@@ -11,11 +11,13 @@ import {
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { StatusPill, ProgressBar } from "../../components/index.js";
 import { PROJECT_FILTERS } from "../../lib/constants.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useProjects } from "../../api/projects.js";
 
 export function ProjectsPage() {
   const navigate = useNavigate();
+  const { role } = useAuth();
   const { setModal } = useData();
   const { data: projects = [], isLoading } = useProjects();
   const [filter, setFilter] = useState("All");
@@ -30,10 +32,12 @@ export function ProjectsPage() {
         title="Every site, one clear view"
         text="Track schedules, teams, work and field activity across your portfolio."
         action={
-          <button className="primary-button" onClick={() => setModal({ type: "project" })}>
-            <Plus size={18} />
-            Create project
-          </button>
+          (role === "SUPER_ADMIN" || role === "MANAGER") && (
+            <button className="primary-button" onClick={() => setModal({ type: "project" })}>
+              <Plus size={18} />
+              Create project
+            </button>
+          )
         }
       />
       <div className="toolbar">

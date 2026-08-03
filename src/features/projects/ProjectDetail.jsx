@@ -183,10 +183,12 @@ export function ProjectDetail() {
           <Section
             title="Work orders"
             action={
-              <button className="small-button" onClick={() => navigate("/work-orders")}>
-                <Plus size={15} />
-                Add work order
-              </button>
+              canAssign && (
+                <button className="small-button" onClick={() => navigate("/work-orders")}>
+                  <Plus size={15} />
+                  Add work order
+                </button>
+              )
             }
           >
             <div className="order-list compact-list">
