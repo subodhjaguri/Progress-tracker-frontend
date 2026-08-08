@@ -13,10 +13,12 @@ export function UpdateItem({ update, orderTitle, onOpen }) {
         <p className="update-context">{orderTitle}</p>
         <p>{update.text}</p>
         <div className="update-footer">
-          <span className="mini-progress">
-            <i style={{ width: `${update.progress}%` }} />
-            {update.progress}%
-          </span>
+          <div className="mini-progress">
+            <div className="mini-progress-bar">
+              <i style={{ width: `${update.progress}%` }} />
+            </div>
+            <span className="mini-progress-text">{update.progress}%</span>
+          </div>
           <span>
             <ImageIcon size={14} /> {update.photos} photos
           </span>

@@ -224,9 +224,10 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .update-body > p { margin: 0; color: #46524e; font-size: 11px; line-height: 1.55; }
 .update-footer { margin-top: 9px; display: flex; align-items: center; gap: 16px; color: var(--muted); font-size: 9px; }
 .update-footer > span { display: flex; align-items: center; gap: 4px; }
-.mini-progress { position: relative; width: 78px; height: 16px; padding-left: 49px; }
-.mini-progress::before { content: ""; position: absolute; left: 0; top: 6px; width: 43px; height: 4px; border-radius: 4px; background: #e5eae7; }
-.mini-progress i { position: absolute; left: 0; top: 6px; height: 4px; border-radius: 4px; background: var(--green); }
+.mini-progress { display: inline-flex; align-items: center; gap: 8px; }
+.mini-progress-bar { position: relative; width: 60px; height: 6px; border-radius: 4px; background: #e5eae7; overflow: hidden; }
+.mini-progress-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--green); }
+.mini-progress-text { font-size: 11px; font-weight: 700; color: #2e3a35; white-space: nowrap; }
 .row-chevron { position: absolute; right: 15px; top: 50%; color: #9aa39f; transform: rotate(-90deg); }
 .attention-list button { width: 100%; padding: 13px 16px; border: 0; border-bottom: 1px solid var(--soft-line); display: flex; align-items: center; gap: 10px; background: white; text-align: left; }
 .attention-list button:last-child { border: 0; }
