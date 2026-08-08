@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import {
   Download,
   MapPin,
@@ -12,6 +13,7 @@ import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { Field, StatusPill, ProgressBar } from "../../components/index.js";
 import { useProjects } from "../../api/projects.js";
 import { useDailyReport } from "../../api/reports.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { fmtDate, initials } from "../../lib/format.js";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -19,6 +21,8 @@ const today = () => new Date().toISOString().slice(0, 10);
 const RECEIPT_LABEL = { Confirmed: "Confirmed", Issue: "Issue flagged" };
 
 export function DailyReport() {
+  const { role } = useAuth();
+  if (role === "ENGINEER") return <Navigate to="/projects" replace />;
   const { data: projects = [] } = useProjects();
   const [projectId, setProjectId] = useState("");
   const [date, setDate] = useState(today());

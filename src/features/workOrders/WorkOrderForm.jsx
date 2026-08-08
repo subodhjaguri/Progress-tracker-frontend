@@ -31,22 +31,22 @@ export function WorkOrderForm({ onClose }) {
     };
     try {
       await create.mutateAsync(body);
-      announce("Work order created and assigned");
+      announce("Task created and assigned");
       onClose();
     } catch (err) {
-      setError(errMessage(err, "Could not create work order"));
+      setError(errMessage(err, "Could not create task"));
     }
   };
 
   return (
     <Modal
-      title="Create work order"
-      subtitle="Define the work, assign the supervisor, and set the weightage percentage."
+      title="Create Task"
+      subtitle="Define the task, assign the supervisor, and set the weightage percentage."
       onClose={onClose}
       wide
     >
       <form className="form-grid" onSubmit={submit}>
-        <Field label="Work order title" className="full">
+        <Field label="Task title" className="full">
           <input name="title" required placeholder="e.g. First floor brickwork" />
         </Field>
         <Field label="Project">

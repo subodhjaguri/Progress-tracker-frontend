@@ -62,7 +62,7 @@ const ROLES = {
     name: "Labour",
     role: "On the ground",
     blurb: "No login — managed by the contractor.",
-    can: ["Attendance tracked", "Assigned to labour tasks"],
+    can: ["Attendance tracked", "Assigned to work sites"],
   },
 };
 
@@ -94,9 +94,9 @@ function RoleCard({ data, compact }) {
 // ── The work chain ───────────────────────────────────────────────────────────
 const CHAIN = [
   { icon: Building2, tone: "green", term: "Project", def: "The work site — e.g. Riverside Hotel." },
-  { icon: ClipboardList, tone: "blue", term: "Work Order", def: "One job on that site, e.g. Foundation. The unit of execution that gets tracked." },
-  { icon: UsersRound, tone: "amber", term: "Contractor", def: "One contractor owns each work order." },
-  { icon: HardHat, tone: "muted", term: "Labour & tasks", def: "The crew and sub-tasks under that contractor." },
+  { icon: ClipboardList, tone: "blue", term: "Task", def: "One job on that site, e.g. Foundation. The unit of execution that gets tracked." },
+  { icon: UsersRound, tone: "amber", term: "Contractor", def: "One contractor owns each task." },
+  { icon: HardHat, tone: "muted", term: "Labour crew", def: "The workforce managed on site." },
 ];
 
 // ── Material flow (animated) ──────────────────────────────────────────────────

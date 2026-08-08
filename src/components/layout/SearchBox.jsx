@@ -60,7 +60,7 @@ export function SearchBox() {
         onBlur={() => {
           blurTimer.current = window.setTimeout(() => setOpen(false), 150);
         }}
-        placeholder="Search projects, work orders, people..."
+        placeholder="Search projects, tasks, people..."
       />
       {show && (
         <div className="search-results" onMouseDown={() => clearTimeout(blurTimer.current)}>
@@ -75,7 +75,7 @@ export function SearchBox() {
                 onClick={(p) => go(`/projects/${p.id}`)}
               />
               <Group
-                title="Work orders"
+                title="Tasks"
                 items={r.workOrders}
                 render={(w) => [w.title, w.code]}
                 onClick={(w) => go(`/work-orders/${w.id}`)}

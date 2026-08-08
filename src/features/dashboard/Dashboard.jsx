@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import {
   Plus,
   MapPin,
@@ -50,6 +50,10 @@ const CARD_META = {
 export function Dashboard() {
   const navigate = useNavigate();
   const { role, profile } = useAuth();
+
+  if (role === "ENGINEER") {
+    return <Navigate to="/projects" replace />;
+  }
   const { setModal } = useData();
   const { data: dash, isLoading } = useDashboard();
   const { data: projects = [] } = useProjects();

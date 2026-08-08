@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Plus, PackageCheck, ArrowDownToLine, ArrowUpFromLine, Boxes } from "lucide-react";
+import { Navigate } from "react-router-dom";
+import { Plus, PackageCheck, ArrowDownToLine, ArrowUpFromLine, Boxes, Pencil, Trash2 } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { StatCard, Section, StatusPill, Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
-import { useMaterials, useConfirmMaterial, useRequestMaterial, useProvideMaterial, useAcknowledgeMaterial } from "../../api/materials.js";
+import { useMaterials, useConfirmMaterial, useRequestMaterial, useProvideMaterial, useAcknowledgeMaterial, useUpdateManagerNote } from "../../api/materials.js";
 import { useProjects } from "../../api/projects.js";
 import { movementLabel } from "../../lib/format.js";
 import { errMessage } from "../../lib/api.js";
@@ -17,8 +18,17 @@ const FILTERS = [
   { label: "Used", value: "Used" },
 ];
 
+const emptyRequestItem = () => ({
+  key: Date.now() + Math.random(),
+  materialName: "",
+  quantity: "",
+  unit: "",
+  note: "",
+});
+
 export function MaterialsPage() {
   const { role } = useAuth();
+  if (role === "ENGINEER") return <Navigate to="/projects" replace />;
   const { setModal, announce } = useData();
   const projects = useProjects();
   const canRecord = role !== "CONTRACTOR";
@@ -27,12 +37,18 @@ export function MaterialsPage() {
   const canConfirm = role === "SUPERVISOR" || role === "SUPER_ADMIN";
   const [filter, setFilter] = useState(FILTERS[0]);
   const [issueFor, setIssueFor] = useState(null);
+  const [editNoteFor, setEditNoteFor] = useState(null);
   const [requestModal, setRequestModal] = useState(false);
+  const [requestProjectId, setRequestProjectId] = useState("");
+  const [requestItems, setRequestItems] = useState([emptyRequestItem()]);
+  const [requestError, setRequestError] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
   const queryParams = {};
   if (filter.value) queryParams.type = filter.value;
+  if (selectedProjectId) queryParams.project = selectedProjectId;
   if (dateFrom) queryParams.from = dateFrom;
   if (dateTo) queryParams.to = dateTo;
 
@@ -41,6 +57,7 @@ export function MaterialsPage() {
   const requestMat = useRequestMaterial();
   const provideMat = useProvideMaterial();
   const acknowledgeMat = useAcknowledgeMaterial();
+  const updateManagerNote = useUpdateManagerNote();
 
   const received = materials.filter((m) => m.type === "Received").length;
   const used = materials.filter((m) => m.type === "Used").length;
@@ -58,27 +75,60 @@ export function MaterialsPage() {
   const handleAcknowledge = async (m) => {
     try {
       await acknowledgeMat.mutateAsync(m.id);
-      announce("Material delivery acknowledged");
+      announce("Material delivery marked as completed");
     } catch (err) {
-      announce(errMessage(err, "Could not acknowledge delivery"));
+      announce(errMessage(err, "Could not complete delivery"));
     }
+  };
+
+  const addRequestLine = () => setRequestItems((prev) => [...prev, emptyRequestItem()]);
+  const removeRequestLine = (index) => {
+    if (requestItems.length <= 1) return;
+    setRequestItems((prev) => prev.filter((_, i) => i !== index));
+  };
+  const updateRequestItem = (index, field, value) => {
+    setRequestItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
   };
 
   const submitRequest = async (event) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    setRequestError("");
+    if (!requestProjectId) return setRequestError("Select a project");
+
+    const validatedItems = [];
+    for (let i = 0; i < requestItems.length; i++) {
+      const item = requestItems[i];
+      const name = item.materialName.trim();
+      const unit = item.unit.trim();
+      const qty = Number(item.quantity);
+      if (!name) return setRequestError(`Line ${i + 1}: Material name is required`);
+      if (!unit) return setRequestError(`Line ${i + 1}: Unit is required`);
+      if (!qty || qty <= 0) return setRequestError(`Line ${i + 1}: Enter a valid quantity`);
+      validatedItems.push({
+        materialName: name,
+        quantity: qty,
+        unit,
+        note: item.note?.trim() || undefined,
+      });
+    }
+
     try {
       await requestMat.mutateAsync({
-        project: form.get("project"),
-        materialName: form.get("materialName"),
-        quantity: Number(form.get("quantity")),
-        unit: form.get("unit"),
-        note: form.get("note"),
+        project: requestProjectId,
+        items: validatedItems,
       });
-      announce("Material request submitted");
+      announce(
+        validatedItems.length === 1
+          ? "Material request submitted"
+          : `${validatedItems.length} material requests submitted`
+      );
       setRequestModal(false);
+      setRequestItems([emptyRequestItem()]);
+      setRequestProjectId("");
     } catch (err) {
-      announce(errMessage(err, "Could not submit request"));
+      setRequestError(errMessage(err, "Could not submit request"));
     }
   };
 
@@ -103,9 +153,22 @@ export function MaterialsPage() {
     }
   };
 
+  const submitManagerNote = async (event) => {
+    event.preventDefault();
+    const note = new FormData(event.currentTarget).get("note")?.trim();
+    try {
+      await updateManagerNote.mutateAsync({ id: editNoteFor.id, note });
+      announce("Manager action note saved");
+      setEditNoteFor(null);
+    } catch (err) {
+      announce(errMessage(err, "Could not save manager note"));
+    }
+  };
+
   const clearDates = () => {
     setDateFrom("");
     setDateTo("");
+    setSelectedProjectId("");
   };
 
   return (
@@ -150,6 +213,16 @@ export function MaterialsPage() {
           ))}
         </div>
         <div className="date-filter">
+          <Field label="Project">
+            <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}>
+              <option value="">All Projects</option>
+              {(projects.data || []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="From">
             <input
               type="date"
@@ -164,7 +237,7 @@ export function MaterialsPage() {
               onChange={(e) => setDateTo(e.target.value)}
             />
           </Field>
-          {(dateFrom || dateTo) && (
+          {(dateFrom || dateTo || selectedProjectId) && (
             <button className="secondary-button small" onClick={clearDates}>
               Clear
             </button>
@@ -206,35 +279,66 @@ export function MaterialsPage() {
                 </strong>
               </div>
               <div className="ledger-receipt">
-                <span>{m.party || m.requestedBy ? `Requested by ${m.requestedBy}` : "—"}</span>
+                <span>
+                  {m.type === "Requested"
+                    ? (m.requestedBy ? `Requested by ${m.requestedBy}` : m.party || "—")
+                    : (m.party || (m.requestedBy ? `Requested by ${m.requestedBy}` : "—"))}
+                </span>
                 {m.type === "Requested" && (
                   <div className="receipt-line">
-                    {m.status === "Requested" && isManager && (
-                      <button className="mini-button" onClick={() => handleProvide(m)}>
-                        Provide Material
-                      </button>
+                    {m.status === "Requested" && (
+                      isManager ? (
+                        <button className="mini-button" onClick={() => handleProvide(m)}>
+                          Provide Material
+                        </button>
+                      ) : (
+                        <small style={{ color: "#d97706", fontWeight: 500 }}>Awaiting Manager Provision</small>
+                      )
                     )}
-                    {m.status === "Provided" && (isSupervisor || isManager) && (
-                      <button className="mini-button" onClick={() => handleAcknowledge(m)}>
-                        Acknowledge Delivery
-                      </button>
+                    {m.status === "Provided" && (
+                      (isSupervisor || role === "SUPER_ADMIN") ? (
+                        <button className="mini-button" onClick={() => handleAcknowledge(m)}>
+                          Delivery Completed
+                        </button>
+                      ) : (
+                        <small style={{ color: "#2563eb", fontWeight: 500 }}>Provided (Awaiting Supervisor Confirmation)</small>
+                      )
                     )}
                     {m.status === "Acknowledged" && (
-                      <small style={{ color: "#16a34a" }}>Delivered & Acknowledged</small>
+                      <small style={{ color: "#16a34a", fontWeight: 500 }}>Delivery Completed</small>
                     )}
                   </div>
                 )}
                 {m.type === "Received" && (
-                  <div className="receipt-line">
-                    <span className={`receipt-badge ${(m.receiptStatus || "Pending").toLowerCase()}`}>
-                      {m.receiptStatus || "Pending"}
-                    </span>
-                    {m.receiptStatus === "Confirmed" && m.confirmedBy && (
-                      <small>by {m.confirmedBy}</small>
+                  <div className="receipt-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <span className={`receipt-badge ${(m.receiptStatus || "Pending").toLowerCase()}`}>
+                        {m.receiptStatus || "Pending"}
+                      </span>
+                      {m.receiptStatus === "Confirmed" && m.confirmedBy && (
+                        <small>by {m.confirmedBy}</small>
+                      )}
+                      {m.receiptStatus === "Issue" && isManager && (
+                        <button
+                          className="icon-button"
+                          style={{ padding: "2px 4px", fontSize: "0.75rem" }}
+                          title="Add/edit manager action note"
+                          onClick={() => setEditNoteFor(m)}
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      )}
+                    </div>
+                    {m.receiptStatus === "Issue" && m.receiptNote && (
+                      <small style={{ color: "#dc2626" }}>Issue: {m.receiptNote}</small>
                     )}
-                    {m.receiptStatus === "Issue" && m.receiptNote && <small>{m.receiptNote}</small>}
+                    {m.receiptStatus === "Issue" && m.managerNote && (
+                      <small style={{ color: "#2563eb", fontWeight: 500 }}>
+                        Manager Action: {m.managerNote}
+                      </small>
+                    )}
                     {canConfirm && (!m.receiptStatus || m.receiptStatus === "Pending") && (
-                      <span className="receipt-actions">
+                      <span className="receipt-actions" style={{ marginTop: "4px" }}>
                         <button className="mini-button" onClick={() => handleConfirm(m)}>
                           Confirm
                         </button>
@@ -252,29 +356,109 @@ export function MaterialsPage() {
       </Section>
 
       {requestModal && (
-        <Modal title="Request Material" subtitle="Request materials for your project site" onClose={() => setRequestModal(false)}>
+        <Modal
+          title="Request Material"
+          subtitle="Request one or multiple materials for your project site"
+          onClose={() => {
+            setRequestModal(false);
+            setRequestError("");
+          }}
+          wide
+        >
           <form className="form-grid" onSubmit={submitRequest}>
             <Field label="Project">
-              <select name="project" required defaultValue="">
+              <select
+                value={requestProjectId}
+                onChange={(e) => setRequestProjectId(e.target.value)}
+                required
+              >
                 <option value="" disabled>Select project</option>
                 {(projects.data || []).map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
             </Field>
-            <Field label="Material Name">
-              <input name="materialName" required placeholder="e.g. Bricks, Cement, Steel" />
-            </Field>
-            <Field label="Quantity">
-              <input name="quantity" type="number" min="1" required placeholder="100" />
-            </Field>
-            <Field label="Unit">
-              <input name="unit" required placeholder="bags / tons / pcs" />
-            </Field>
-            <Field label="Note" className="full">
-              <textarea name="note" rows="2" placeholder="Urgency or site delivery details" />
-            </Field>
-            <FormActions onClose={() => setRequestModal(false)} label={requestMat.isPending ? "Submitting…" : "Submit Request"} />
+
+            <div className="full bulk-items-section">
+              <div className="bulk-items-heading">
+                <strong>Requested Materials ({requestItems.length} {requestItems.length === 1 ? "item" : "items"})</strong>
+                <button type="button" className="small-button" onClick={addRequestLine}>
+                  <Plus size={15} />
+                  Add line
+                </button>
+              </div>
+
+              {requestItems.map((item, index) => (
+                <div className="bulk-item-row" key={item.key}>
+                  <span className="bulk-item-num">{index + 1}</span>
+
+                  <Field label="Material name">
+                    <input
+                      value={item.materialName}
+                      onChange={(e) => updateRequestItem(index, "materialName", e.target.value)}
+                      required
+                      placeholder="e.g. Bricks, Cement, Steel"
+                    />
+                  </Field>
+
+                  <Field label="Qty">
+                    <input
+                      type="number"
+                      min="1"
+                      step="any"
+                      required
+                      placeholder="100"
+                      value={item.quantity}
+                      onChange={(e) => updateRequestItem(index, "quantity", e.target.value)}
+                    />
+                  </Field>
+
+                  <Field label="Unit">
+                    <input
+                      value={item.unit}
+                      onChange={(e) => updateRequestItem(index, "unit", e.target.value)}
+                      required
+                      placeholder="bags / tons / pcs"
+                    />
+                  </Field>
+
+                  <Field label="Note">
+                    <input
+                      value={item.note}
+                      onChange={(e) => updateRequestItem(index, "note", e.target.value)}
+                      placeholder="Urgency / site details"
+                    />
+                  </Field>
+
+                  {requestItems.length > 1 && (
+                    <button
+                      type="button"
+                      className="bulk-item-remove"
+                      onClick={() => removeRequestLine(index)}
+                      title="Remove line"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {requestError && <div className="login-error">{requestError}</div>}
+
+            <FormActions
+              onClose={() => {
+                setRequestModal(false);
+                setRequestError("");
+              }}
+              label={
+                requestMat.isPending
+                  ? "Submitting…"
+                  : requestItems.length > 1
+                  ? `Request ${requestItems.length} Materials`
+                  : "Submit Request"
+              }
+            />
           </form>
         </Modal>
       )}
@@ -292,6 +476,30 @@ export function MaterialsPage() {
             <FormActions
               onClose={() => setIssueFor(null)}
               label={confirm.isPending ? "Saving…" : "Flag issue"}
+            />
+          </form>
+        </Modal>
+      )}
+
+      {editNoteFor && (
+        <Modal
+          title="Manager Action / Resolution Note"
+          subtitle={`${editNoteFor.materialName} · ${editNoteFor.projectName || ""}`}
+          onClose={() => setEditNoteFor(null)}
+        >
+          <form className="form-grid single" onSubmit={submitManagerNote}>
+            <Field label="Action Taken / Resolution Note">
+              <textarea
+                name="note"
+                rows="3"
+                defaultValue={editNoteFor.managerNote || ""}
+                required
+                placeholder="e.g. Approved replacement order of 5 bags / Contractor notified"
+              />
+            </Field>
+            <FormActions
+              onClose={() => setEditNoteFor(null)}
+              label={updateManagerNote.isPending ? "Saving Note…" : "Save Action Note"}
             />
           </form>
         </Modal>

@@ -125,7 +125,7 @@ export function ProjectDetail() {
         <div>
           <span>Project manager</span>
           <strong>{project.manager}</strong>
-          <small>{project.workOrderCount} work orders</small>
+          <small>{project.workOrderCount} tasks</small>
         </div>
         <div>
           <span>Site supervisor</span>
@@ -176,22 +176,22 @@ export function ProjectDetail() {
         </div>
       </div>
       <div className="detail-tabs">
-        {TABS.map((item) => (
+        {["Overview", "Tasks", "Attendance", "Updates", "Photos", "Documents", "Comments"].map((item) => (
           <button key={item} className={tab === item ? "active" : ""} onClick={() => setTab(item)}>
             {item}
-            {item === "Work Orders" && <i>{orders.length}</i>}
+            {(item === "Tasks" || item === "Work Orders") && <i>{orders.length}</i>}
           </button>
         ))}
       </div>
       {tab === "Overview" && (
         <div className="detail-grid">
           <Section
-            title="Work orders"
+            title="Tasks"
             action={
               canAssign && (
                 <button className="small-button" onClick={() => navigate("/work-orders")}>
                   <Plus size={15} />
-                  Add work order
+                  Add task
                 </button>
               )
             }
@@ -203,7 +203,7 @@ export function ProjectDetail() {
                 ))
               ) : (
                 <div className="empty-inline">
-                  <strong>No work orders yet</strong>
+                  <strong>No tasks yet</strong>
                 </div>
               )}
             </div>
@@ -213,7 +213,7 @@ export function ProjectDetail() {
               <div>
                 <HardHat />
                 <strong>{project.workOrderCount}</strong>
-                <span>Work orders</span>
+                <span>Tasks</span>
               </div>
               <div>
                 <TrendingUp />
@@ -235,14 +235,14 @@ export function ProjectDetail() {
           <Section title="Latest updates" className="wide-panel">
             <div className="empty-inline">
               <TrendingUp />
-              <strong>Updates live on each work order</strong>
-              <p>Open a work order to post or view its progress updates.</p>
+              <strong>Updates live on each task</strong>
+              <p>Open a task to post or view its progress updates.</p>
             </div>
           </Section>
         </div>
       )}
-      {tab === "Work Orders" && (
-        <Section title={`${orders.length} work orders`}>
+      {(tab === "Tasks" || tab === "Work Orders") && (
+        <Section title={`${orders.length} tasks`}>
           <div className="order-list">
             {orders.map((order) => (
               <OrderRow key={order.id} order={order} onClick={() => openOrder(order)} />
@@ -255,8 +255,8 @@ export function ProjectDetail() {
         <Section title="Progress timeline">
           <div className="empty-inline">
             <TrendingUp />
-            <strong>Updates live on each work order</strong>
-            <p>Open a work order to see its progress timeline.</p>
+            <strong>Updates live on each task</strong>
+            <p>Open a task to see its progress timeline.</p>
           </div>
         </Section>
       )}

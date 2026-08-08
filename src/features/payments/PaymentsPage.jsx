@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { IndianRupee, Plus, Users, Briefcase, ReceiptText, CheckCircle2, XCircle } from "lucide-react";
+import { IndianRupee, Plus, Users, Briefcase, ReceiptText, CheckCircle2, XCircle, Paperclip, Image as ImageIcon } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { StatCard, Section, StatusPill, Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
@@ -22,12 +22,16 @@ export function PaymentsPage() {
   const isManager = role === "MANAGER" || role === "SUPER_ADMIN";
 
   const [activeType, setActiveType] = useState("All");
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [createModalType, setCreateModalType] = useState(null); // "Labour" | "Contractor" | "Miscellaneous"
+  const [proofAttachment, setProofAttachment] = useState("");
+  const [previewProofUrl, setPreviewProofUrl] = useState(null);
 
   const queryParams = {};
   if (activeType !== "All") queryParams.type = activeType;
+  if (selectedProjectId) queryParams.project = selectedProjectId;
   if (dateFrom) queryParams.from = dateFrom;
   if (dateTo) queryParams.to = dateTo;
 
@@ -58,6 +62,19 @@ export function PaymentsPage() {
     }
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      setProofAttachment("");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      setProofAttachment(evt.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const submitCreate = async (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -69,11 +86,13 @@ export function PaymentsPage() {
       contractor: form.get("contractor") || undefined,
       labourCount: form.get("labourCount") ? Number(form.get("labourCount")) : undefined,
       proofNotes: form.get("proofNotes") || undefined,
+      attachment: proofAttachment || undefined,
     };
     try {
       await createPayment.mutateAsync(body);
       announce(`${createModalType} payment entry created`);
       setCreateModalType(null);
+      setProofAttachment("");
     } catch (err) {
       announce(errMessage(err, "Could not create payment entry"));
     }
@@ -127,18 +146,29 @@ export function PaymentsPage() {
           ))}
         </div>
         <div className="date-filter">
+          <Field label="Project">
+            <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}>
+              <option value="">All Projects</option>
+              {(projects.data || []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="From">
             <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </Field>
           <Field label="To">
             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
           </Field>
-          {(dateFrom || dateTo) && (
+          {(dateFrom || dateTo || selectedProjectId) && (
             <button
               className="secondary-button small"
               onClick={() => {
                 setDateFrom("");
                 setDateTo("");
+                setSelectedProjectId("");
               }}
             >
               Clear
@@ -148,7 +178,7 @@ export function PaymentsPage() {
       </div>
 
       <Section title="Payment Records" eyebrow="FINANCIAL TRANSACTIONS" className="ledger-panel">
-        <div className="ledger-header" style={{ gridTemplateColumns: "1fr 1.2fr 1fr 1fr 1fr 1.2fr" }}>
+        <div className="ledger-header" style={{ gridTemplateColumns: "1fr 1.2fr 1fr 1fr 1fr 1.4fr" }}>
           <span>Date</span>
           <span>Project & Type</span>
           <span>Amount</span>
@@ -169,7 +199,7 @@ export function PaymentsPage() {
             </div>
           )}
           {payments.map((p) => (
-            <article key={p._id || p.id} style={{ gridTemplateColumns: "1fr 1.2fr 1fr 1fr 1fr 1.2fr" }}>
+            <article key={p._id || p.id} style={{ gridTemplateColumns: "1fr 1.2fr 1fr 1fr 1fr 1.4fr" }}>
               <span>{new Date(p.date).toLocaleDateString()}</span>
               <div>
                 <strong>{p.project?.name || "—"}</strong>
@@ -180,8 +210,17 @@ export function PaymentsPage() {
               <div>
                 <StatusPill value={p.status} />
               </div>
-              <div className="receipt-line">
+              <div className="receipt-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
                 {p.proofNotes && <small title={p.proofNotes}>{p.proofNotes}</small>}
+                {p.attachment && (
+                  <button
+                    className="mini-button ghost"
+                    style={{ marginTop: "4px" }}
+                    onClick={() => setPreviewProofUrl(p.attachment)}
+                  >
+                    <Paperclip size={13} /> View Proof Screenshot
+                  </button>
+                )}
                 {p.status === "Requested" && isManager && (
                   <span className="receipt-actions" style={{ marginTop: "4px" }}>
                     <button className="mini-button" onClick={() => handleApprove(p._id || p.id, "Paid")}>
@@ -208,7 +247,10 @@ export function PaymentsPage() {
               ? "Record milestone or progress payout to contractor"
               : "Record transportation or site incidental expenses"
           }
-          onClose={() => setCreateModalType(null)}
+          onClose={() => {
+            setCreateModalType(null);
+            setProofAttachment("");
+          }}
         >
           <form className="form-grid" onSubmit={submitCreate}>
             <Field label="Project">
@@ -253,6 +295,15 @@ export function PaymentsPage() {
               </Field>
             )}
 
+            <Field label="Transaction Proof / Screenshot (Image)" className="full">
+              <input type="file" accept="image/*" onChange={handleFileChange} />
+              {proofAttachment && (
+                <div style={{ marginTop: "6px", fontSize: "0.8rem", color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <ImageIcon size={14} /> Screenshot attached
+                </div>
+              )}
+            </Field>
+
             <Field label="Proof / Description / Notes" className="full">
               <textarea
                 name="proofNotes"
@@ -268,10 +319,25 @@ export function PaymentsPage() {
             </Field>
 
             <FormActions
-              onClose={() => setCreateModalType(null)}
+              onClose={() => {
+                setCreateModalType(null);
+                setProofAttachment("");
+              }}
               label={createPayment.isPending ? "Submitting…" : "Save Payment"}
             />
           </form>
+        </Modal>
+      )}
+
+      {previewProofUrl && (
+        <Modal title="Transaction Proof Screenshot" onClose={() => setPreviewProofUrl(null)}>
+          <div style={{ textAlign: "center" }}>
+            <img
+              src={previewProofUrl}
+              alt="Payment proof screenshot"
+              style={{ maxWidth: "100%", maxHeight: "500px", borderRadius: "8px", border: "1px solid #e2e8f0" }}
+            />
+          </div>
         </Modal>
       )}
     </>

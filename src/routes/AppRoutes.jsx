@@ -14,7 +14,6 @@ import { ContractorDetail } from "../features/team/ContractorDetail.jsx";
 import { LabourPage } from "../features/labour/LabourPage.jsx";
 import { LabourDetail } from "../features/labour/LabourDetail.jsx";
 import { EngineeringPage } from "../features/engineering/EngineeringPage.jsx";
-import { GuidePage } from "../features/guide/GuidePage.jsx";
 
 export function AppRoutes() {
   return (
@@ -33,7 +32,6 @@ export function AppRoutes() {
       <Route path="/labour" element={<LabourPage />} />
       <Route path="/labour/:id" element={<LabourDetail />} />
       <Route path="/reports" element={<DailyReport />} />
-      <Route path="/guide" element={<GuidePage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

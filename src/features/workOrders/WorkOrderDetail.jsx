@@ -5,12 +5,11 @@ import { Section, StatusPill, UpdateItem } from "../../components/index.js";
 import { PhotosPanel } from "../shared/PhotosPanel.jsx";
 import { DocumentsPanel } from "../shared/DocumentsPanel.jsx";
 import { CommentsPanel } from "../shared/CommentsPanel.jsx";
-import { LabourTasksPanel } from "./LabourTasksPanel.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useWorkOrder, useWorkOrderUpdates } from "../../api/workOrders.js";
 
-const TABS = ["Updates", "Labour Tasks", "Photos", "Documents", "Comments"];
+const TABS = ["Updates", "Photos", "Documents", "Comments"];
 
 export function WorkOrderDetail() {
   const { id } = useParams();
@@ -32,10 +31,10 @@ export function WorkOrderDetail() {
     return (
       <div className="empty-state">
         <CircleAlert size={30} />
-        <h3>Work order not found</h3>
+        <h3>Task not found</h3>
         <p>It may have been removed.</p>
         <button className="primary-button" onClick={() => navigate("/work-orders")}>
-          All work orders
+          All tasks
         </button>
       </div>
     );
@@ -45,7 +44,7 @@ export function WorkOrderDetail() {
     <>
       <button className="back-button" onClick={() => navigate("/work-orders")}>
         <ArrowLeft size={17} />
-        All work orders
+        All tasks
       </button>
       <div className="work-order-heading">
         <div>
@@ -130,9 +129,6 @@ export function WorkOrderDetail() {
             )}
           </div>
         </Section>
-      )}
-      {tab === "Labour Tasks" && (
-        <LabourTasksPanel workOrderId={order.id} canManage={role === "SUPERVISOR"} />
       )}
       {tab === "Photos" && <PhotosPanel parentType="WorkOrder" parentId={order.id} />}
       {tab === "Documents" && <DocumentsPanel parentType="WorkOrder" parentId={order.id} />}

@@ -13,11 +13,11 @@ import {
 
 // `roles` (optional) restricts a nav item to those role codes; omitted = all roles.
 export const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/projects", label: "Projects", icon: FolderKanban },
+  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true, roles: ["SUPER_ADMIN", "MANAGER", "SUPERVISOR", "CONTRACTOR"] },
+  { to: "/projects", label: "Projects", icon: FolderKanban, roles: ["SUPER_ADMIN", "MANAGER", "SUPERVISOR", "ENGINEER", "CONTRACTOR"] },
   {
     to: "/work-orders",
-    label: "Work Orders",
+    label: "Tasks",
     icon: ClipboardList,
     roles: ["SUPER_ADMIN", "MANAGER", "SUPERVISOR"],
   },
@@ -28,7 +28,7 @@ export const navItems = [
     roles: ["SUPER_ADMIN", "MANAGER", "SUPERVISOR"],
   },
   { to: "/labour", label: "Labour", icon: HardHat, roles: ["SUPERVISOR"] },
-  { to: "/materials", label: "Materials", icon: Boxes },
+  { to: "/materials", label: "Materials", icon: Boxes, roles: ["SUPER_ADMIN", "MANAGER", "SUPERVISOR", "CONTRACTOR"] },
   {
     to: "/payments",
     label: "Payments",
@@ -42,8 +42,7 @@ export const navItems = [
     roles: ["ENGINEER", "SUPER_ADMIN", "MANAGER", "SUPERVISOR"],
   },
   { to: "/team", label: "Team", icon: UsersRound, roles: ["SUPER_ADMIN", "MANAGER"] },
-  { to: "/reports", label: "Daily Report", icon: ChartNoAxesCombined },
-  { to: "/guide", label: "How it works", icon: Compass, roles: ["SUPER_ADMIN", "MANAGER"] },
+  { to: "/reports", label: "Daily Report", icon: ChartNoAxesCombined, roles: ["SUPER_ADMIN", "MANAGER", "SUPERVISOR", "CONTRACTOR"] },
 ];
 
 export const roles = {

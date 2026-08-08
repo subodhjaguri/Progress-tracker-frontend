@@ -81,3 +81,15 @@ export function useAcknowledgeMaterial() {
     },
   });
 }
+
+export function useUpdateManagerNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, note }) =>
+      unwrap(await api.patch(`/materials/${id}/manager-note`, { note })),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["materials"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
