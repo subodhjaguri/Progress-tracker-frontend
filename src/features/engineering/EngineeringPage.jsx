@@ -19,6 +19,10 @@ export function EngineeringPage() {
   const [activeCategory, setActiveCategory] = useState("Site Summary");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteCategory, setNoteCategory] = useState("Site Description & Summary");
+  const [noteHtmlContent, setNoteHtmlContent] = useState("");
 
   const { data: notes = [] } = useEngineeringNotes(projectId);
   const createNote = useCreateEngineeringNote();
