@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { IndianRupee, Plus, Users, Briefcase, ReceiptText, CheckCircle2, XCircle, Paperclip, Image as ImageIcon } from "lucide-react";
+import { IndianRupee, Plus, Users, Briefcase, ReceiptText, HardHat, CheckCircle2, XCircle, Paperclip, Image as ImageIcon } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { StatCard, Section, StatusPill, Modal, Field } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
@@ -16,10 +16,10 @@ export function PaymentsPage() {
   const { role } = useAuth();
   const { announce } = useData();
   const projects = useProjects();
-  const contractors = useContractors();
-
-  const isSupervisor = role === "SUPERVISOR";
   const isManager = role === "MANAGER" || role === "SUPER_ADMIN";
+  // Only the manager-only Contractor-payment form needs this list, and
+  // /contractors is forbidden to supervisors — don't fire the request for them.
+  const contractors = useContractors(isManager);
 
   const [activeType, setActiveType] = useState("All");
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -28,6 +28,10 @@ export function PaymentsPage() {
   const [createModalType, setCreateModalType] = useState(null); // "Labour" | "Contractor" | "Miscellaneous"
   const [proofAttachment, setProofAttachment] = useState("");
   const [previewProofUrl, setPreviewProofUrl] = useState(null);
+  // The payment being settled — proof is attached here by the manager paying it,
+  // not by the supervisor who raised the request.
+  const [payTarget, setPayTarget] = useState(null);
+  const [payAttachment, setPayAttachment] = useState("");
 
   const queryParams = {};
   if (activeType !== "All") queryParams.type = activeType;
@@ -62,17 +66,33 @@ export function PaymentsPage() {
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
+  const readAsDataUrl = (event, setter) => {
+    const file = event.target.files?.[0];
     if (!file) {
-      setProofAttachment("");
+      setter("");
       return;
     }
     const reader = new FileReader();
-    reader.onload = (evt) => {
-      setProofAttachment(evt.target.result);
-    };
+    reader.onload = (evt) => setter(evt.target.result);
     reader.readAsDataURL(file);
+  };
+
+  const submitPayment = async (event) => {
+    event.preventDefault();
+    const note = new FormData(event.currentTarget).get("note");
+    try {
+      await updateStatus.mutateAsync({
+        id: payTarget._id || payTarget.id,
+        status: "Paid",
+        note: note || undefined,
+        attachment: payAttachment || undefined,
+      });
+      announce("Payment marked as paid");
+      setPayTarget(null);
+      setPayAttachment("");
+    } catch (err) {
+      announce(errMessage(err, "Could not update payment status"));
+    }
   };
 
   const submitCreate = async (event) => {
@@ -108,7 +128,8 @@ export function PaymentsPage() {
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button className="primary-button" onClick={() => setCreateModalType("Labour")}>
               <Plus size={18} />
-              Request Labour Payment
+              {/* A manager records a payout; a supervisor asks for one. */}
+              {isManager ? "Labour Payment" : "Request Labour Payment"}
             </button>
             {isManager && (
               <>
@@ -126,9 +147,10 @@ export function PaymentsPage() {
         }
       />
 
-      <div className="stats-grid material-stats">
+      <div className="stats-grid payment-stats">
         <StatCard label="Total Paid Out" value={`₹${totalPaid.toLocaleString()}`} icon={IndianRupee} tone="green" />
         <StatCard label="Pending Requests" value={pendingCount} icon={Users} tone="amber" />
+        <StatCard label="Labour Payouts" value={`₹${labourTotal.toLocaleString()}`} icon={HardHat} tone="dark-green" />
         <StatCard label="Contractor Payouts" value={`₹${contractorTotal.toLocaleString()}`} icon={Briefcase} tone="blue" />
         <StatCard label="Misc Costs" value={`₹${miscTotal.toLocaleString()}`} icon={ReceiptText} tone="violet" />
       </div>
@@ -223,7 +245,7 @@ export function PaymentsPage() {
                 )}
                 {p.status === "Requested" && isManager && (
                   <span className="receipt-actions" style={{ marginTop: "4px" }}>
-                    <button className="mini-button" onClick={() => handleApprove(p._id || p.id, "Paid")}>
+                    <button className="mini-button" onClick={() => setPayTarget(p)}>
                       <CheckCircle2 size={13} /> Pay
                     </button>
                     <button className="mini-button ghost" onClick={() => handleApprove(p._id || p.id, "Rejected")}>
@@ -242,7 +264,9 @@ export function PaymentsPage() {
           title={`Create ${createModalType} Payment`}
           subtitle={
             createModalType === "Labour"
-              ? "Request daily payment for site workforce with proof"
+              ? isManager
+                ? "Record a daily payout for the site workforce"
+                : "Request daily payment for the site workforce"
               : createModalType === "Contractor"
               ? "Record milestone or progress payout to contractor"
               : "Record transportation or site incidental expenses"
@@ -295,14 +319,24 @@ export function PaymentsPage() {
               </Field>
             )}
 
-            <Field label="Transaction Proof / Screenshot (Image)" className="full">
-              <input type="file" accept="image/*" onChange={handleFileChange} />
-              {proofAttachment && (
-                <div style={{ marginTop: "6px", fontSize: "0.8rem", color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
-                  <ImageIcon size={14} /> Screenshot attached
-                </div>
-              )}
-            </Field>
+            {/* A supervisor's entry is a *request* — nothing has been paid yet, so
+                there is no receipt; they attach nothing and the manager adds proof
+                when settling it. A manager's entry is recorded as already Paid, so
+                proof belongs here on the form. */}
+            {isManager && (
+              <Field label="Transaction Proof / Screenshot (Image)" className="full">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => readAsDataUrl(e, setProofAttachment)}
+                />
+                {proofAttachment && (
+                  <div style={{ marginTop: "6px", fontSize: "0.8rem", color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <ImageIcon size={14} /> Screenshot attached
+                  </div>
+                )}
+              </Field>
+            )}
 
             <Field label="Proof / Description / Notes" className="full">
               <textarea
@@ -324,6 +358,50 @@ export function PaymentsPage() {
                 setProofAttachment("");
               }}
               label={createPayment.isPending ? "Submitting…" : "Save Payment"}
+            />
+          </form>
+        </Modal>
+      )}
+
+      {payTarget && (
+        <Modal
+          title="Record Payment"
+          subtitle={`${payTarget.type} payment of ₹${Number(payTarget.amount || 0).toLocaleString()}${
+            payTarget.project?.name ? ` · ${payTarget.project.name}` : ""
+          }`}
+          onClose={() => {
+            setPayTarget(null);
+            setPayAttachment("");
+          }}
+        >
+          <form className="form-grid" onSubmit={submitPayment}>
+            <Field label="Transaction Proof / Screenshot (Image, optional)" className="full">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => readAsDataUrl(e, setPayAttachment)}
+              />
+              {payAttachment && (
+                <div style={{ marginTop: "6px", fontSize: "0.8rem", color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <ImageIcon size={14} /> Screenshot attached
+                </div>
+              )}
+            </Field>
+
+            <Field label="Payment Note (optional)" className="full">
+              <textarea
+                name="note"
+                rows="2"
+                placeholder="e.g. Paid by UPI, ref 4432119087"
+              />
+            </Field>
+
+            <FormActions
+              onClose={() => {
+                setPayTarget(null);
+                setPayAttachment("");
+              }}
+              label={updateStatus.isPending ? "Saving…" : "Mark as Paid"}
             />
           </form>
         </Modal>

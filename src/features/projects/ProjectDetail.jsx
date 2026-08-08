@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   MapPin,
@@ -34,7 +34,9 @@ export function ProjectDetail() {
   const { role } = useAuth();
   const { announce } = useData();
   const { data: project, isLoading } = useProject(id);
-  const [tab, setTab] = useState("Overview");
+  const [params] = useSearchParams();
+  const initialTab = params.get("tab");
+  const [tab, setTab] = useState(TABS.includes(initialTab) ? initialTab : "Overview");
 
   const canAssign = role === "SUPER_ADMIN" || role === "MANAGER";
   const supervisors = useSupervisors(canAssign);

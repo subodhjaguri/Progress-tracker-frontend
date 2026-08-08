@@ -42,9 +42,14 @@ export function MaterialsPage() {
   const [requestProjectId, setRequestProjectId] = useState("");
   const [requestItems, setRequestItems] = useState([emptyRequestItem()]);
   const [requestError, setRequestError] = useState("");
-  const [selectedProjectId, setSelectedProjectId] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  // Read straight from the URL rather than via useSearchParams: this component
+  // returns early above (role guard) before any hook runs, so adding another hook
+  // here would extend that rules-of-hooks violation. These are mount-time initial
+  // values only, so a plain read behaves identically.
+  const params = new URLSearchParams(window.location.search);
+  const [selectedProjectId, setSelectedProjectId] = useState(params.get("project") || "");
+  const [dateFrom, setDateFrom] = useState(params.get("from") || "");
+  const [dateTo, setDateTo] = useState(params.get("to") || "");
 
   const queryParams = {};
   if (filter.value) queryParams.type = filter.value;

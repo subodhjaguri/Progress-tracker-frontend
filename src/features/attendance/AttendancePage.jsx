@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { HardHat, UserRoundCheck, X, Clock3, CircleCheckBig } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { StatCard, Section, Field } from "../../components/index.js";
@@ -30,8 +30,9 @@ export function AttendancePage() {
 function SupervisorAttendance() {
   const { announce } = useData();
   const navigate = useNavigate();
-  const [date, setDate] = useState(today());
-  const [projectId, setProjectId] = useState("");
+  const [params] = useSearchParams();
+  const [date, setDate] = useState(params.get("date") || today());
+  const [projectId, setProjectId] = useState(params.get("project") || "");
   const [marks, setMarks] = useState({});
   const [savedLabourIds, setSavedLabourIds] = useState(new Set());
 
@@ -191,8 +192,9 @@ function SupervisorAttendance() {
 
 // ---- Manager / Super Admin: read-only attendance by project + date ----
 function ManagerAttendance() {
-  const [date, setDate] = useState(today());
-  const [projectId, setProjectId] = useState("");
+  const [params] = useSearchParams();
+  const [date, setDate] = useState(params.get("date") || today());
+  const [projectId, setProjectId] = useState(params.get("project") || "");
   const projects = useProjects();
   const records = useAttendance({ project: projectId, date });
   const summary = useAttendanceSummary({ scope: "project", id: projectId, date });

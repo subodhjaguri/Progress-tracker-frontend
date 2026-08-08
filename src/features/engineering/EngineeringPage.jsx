@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Compass, FileText, Ruler, Calculator, Plus, Trash2, Edit3, Paperclip, Download, X } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { Section, Field, Modal } from "../../components/index.js";
@@ -11,6 +11,7 @@ import { useData } from "../../context/DataContext.jsx";
 import { useEngineeringNotes, useCreateEngineeringNote, useDeleteEngineeringNote } from "../../api/engineering.js";
 import { errMessage } from "../../lib/api.js";
 import { fmtSize } from "../../lib/format.js";
+import { sanitizeHtml } from "../../lib/sanitize.js";
 
 export function EngineeringPage() {
   const { role } = useAuth();
@@ -37,12 +38,21 @@ export function EngineeringPage() {
 
   const selectedProject = projects.find((p) => p.id === projectId);
 
-  const filteredNotes = notes.filter((n) => {
-    const d = new Date(n.createdAt);
-    if (dateFrom && d < new Date(dateFrom)) return false;
-    if (dateTo && d > new Date(dateTo + "T23:59:59")) return false;
-    return true;
-  });
+  // Sanitizing here rather than in the render loop: the compose modal's state lives
+  // in this component, so every keystroke re-renders the page — without this the
+  // whole note list would be re-parsed by DOMPurify on each one.
+  const filteredNotes = useMemo(
+    () =>
+      notes
+        .filter((n) => {
+          const d = new Date(n.createdAt);
+          if (dateFrom && d < new Date(dateFrom)) return false;
+          if (dateTo && d > new Date(dateTo + "T23:59:59")) return false;
+          return true;
+        })
+        .map((n) => ({ ...n, safeContent: sanitizeHtml(n.content) })),
+    [notes, dateFrom, dateTo],
+  );
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files || []);
@@ -254,7 +264,7 @@ export function EngineeringPage() {
                           fontSize: "0.925rem",
                           lineHeight: "1.6",
                         }}
-                        dangerouslySetInnerHTML={{ __html: n.content }}
+                        dangerouslySetInnerHTML={{ __html: n.safeContent }}
                       />
                       {n.attachments && n.attachments.length > 0 && (
                         <div style={{ marginTop: "0.85rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>

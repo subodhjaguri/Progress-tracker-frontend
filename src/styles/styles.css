@@ -168,6 +168,7 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .stat-icon.violet { color: var(--violet); background: #eeecf6; }
 .stat-icon.amber { color: #b57120; background: #fbf0df; }
 .stat-icon.red { color: var(--red); background: #f8e9e7; }
+.stat-icon.dark-green { color: var(--dark-green); background: #e4ece8; }
 .stat-card p { margin: 0 0 5px; color: var(--muted); font-size: 12px; }
 .stat-card strong { display: block; font-family: "Manrope"; font-size: 25px; }
 .stat-card small { color: var(--green); font-size: 10px; }
@@ -362,6 +363,8 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .documents-list strong, .documents-list span { display: block; }
 .documents-list strong { font-size: 10px; }.documents-list span { margin-top: 3px; color: var(--muted); font-size: 8px; }
 .attendance-stats, .material-stats { grid-template-columns: repeat(4, 1fr); }
+/* Payments shows the three payment-type totals alongside the two summaries. */
+.payment-stats { grid-template-columns: repeat(5, 1fr); }
 .attendance-table-header, .attendance-person { display: grid; grid-template-columns: minmax(190px, 1.2fr) .6fr 1fr minmax(280px, 1.3fr); align-items: center; gap: 14px; }
 .attendance-table-header { padding: 11px 18px; color: var(--muted); background: #f6f8f6; font-size: 9px; text-transform: uppercase; }
 .attendance-person { min-height: 67px; padding: 9px 18px; border-bottom: 1px solid var(--soft-line); font-size: 10px; }
@@ -940,6 +943,33 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 }
 .subtask-delete-btn:hover {
   color: #d32f2f;
+}
+
+/* Daily report: rows and tiles that navigate on click */
+.report-metrics .linkable,
+.report-order.linkable,
+.report-update.linkable,
+.report-material.linkable {
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.12s ease;
+}
+.report-metrics .linkable:hover,
+.report-order.linkable:hover,
+.report-update.linkable:hover,
+.report-material.linkable:hover {
+  background: #eef5f1;
+}
+.report-metrics .linkable:focus-visible,
+.report-order.linkable:focus-visible,
+.report-update.linkable:focus-visible,
+.report-material.linkable:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+@media print {
+  /* The printed report is not clickable — drop the affordances. */
+  .linkable { background: none !important; cursor: auto; }
 }
 
 /* Rich Text Editor */

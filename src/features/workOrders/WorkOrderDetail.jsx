@@ -57,10 +57,13 @@ export function WorkOrderDetail() {
           </div>
           <p>{order.description}</p>
         </div>
-        <button className="primary-button" onClick={() => setModal({ type: "progress", order })}>
-          <TrendingUp size={18} />
-          Update progress
-        </button>
+        {/* Progress is reported by the site supervisor only (API enforces the same). */}
+        {role === "SUPERVISOR" && (
+          <button className="primary-button" onClick={() => setModal({ type: "progress", order })}>
+            <TrendingUp size={18} />
+            Update progress
+          </button>
+        )}
       </div>
       <div className="order-overview">
         <div>
@@ -109,10 +112,12 @@ export function WorkOrderDetail() {
         <Section
           title="Progress updates"
           action={
-            <button className="small-button" onClick={() => setModal({ type: "progress", order })}>
-              <Plus size={15} />
-              Post update
-            </button>
+            role === "SUPERVISOR" ? (
+              <button className="small-button" onClick={() => setModal({ type: "progress", order })}>
+                <Plus size={15} />
+                Post update
+              </button>
+            ) : undefined
           }
           className="wide-panel"
         >

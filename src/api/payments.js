@@ -26,8 +26,8 @@ export function useCreatePayment() {
 export function useUpdatePaymentStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status, note }) =>
-      unwrap(await api.patch(`/payments/${id}/status`, { status, note })),
+    mutationFn: async ({ id, status, note, attachment }) =>
+      unwrap(await api.patch(`/payments/${id}/status`, { status, note, attachment })),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["payments"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });

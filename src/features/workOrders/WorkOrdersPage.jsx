@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { Plus, ChevronDown } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { Section, StatusPill, Field } from "../../components/index.js";
@@ -15,9 +15,10 @@ export function WorkOrdersPage() {
   const { setModal } = useData();
   const projects = useProjects();
   const [filter, setFilter] = useState("All");
-  const [selectedProjectId, setSelectedProjectId] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [params] = useSearchParams();
+  const [selectedProjectId, setSelectedProjectId] = useState(params.get("project") || "");
+  const [dateFrom, setDateFrom] = useState(params.get("from") || "");
+  const [dateTo, setDateTo] = useState(params.get("to") || "");
 
   const queryParams = {};
   if (filter !== "All") queryParams.status = filter;
