@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Compass, FileText, Ruler, Calculator, Plus, Trash2, Edit3 } from "lucide-react";
+import { Compass, FileText, Ruler, Calculator, Plus, Trash2, Edit3, Paperclip, Download, X } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { Section, Field, Modal } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
@@ -10,9 +10,11 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useEngineeringNotes, useCreateEngineeringNote, useDeleteEngineeringNote } from "../../api/engineering.js";
 import { errMessage } from "../../lib/api.js";
+import { fmtSize } from "../../lib/format.js";
 
 export function EngineeringPage() {
   const { role } = useAuth();
+  const canWrite = role === "ENGINEER" || role === "SUPER_ADMIN";
   const { announce } = useData();
   const { data: projects = [], isLoading } = useProjects();
   const [projectId, setProjectId] = useState("");
@@ -23,6 +25,7 @@ export function EngineeringPage() {
   const [noteTitle, setNoteTitle] = useState("");
   const [noteCategory, setNoteCategory] = useState("Site Description & Summary");
   const [noteHtmlContent, setNoteHtmlContent] = useState("");
+  const [noteAttachments, setNoteAttachments] = useState([]);
 
   const { data: notes = [] } = useEngineeringNotes(projectId);
   const createNote = useCreateEngineeringNote();
@@ -41,6 +44,28 @@ export function EngineeringPage() {
     return true;
   });
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setNoteAttachments((prev) => [
+          ...prev,
+          {
+            name: file.name,
+            url: event.target.result,
+            size: file.size,
+          },
+        ]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeAttachment = (index) => {
+    setNoteAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleCreateNote = async (e) => {
     e.preventDefault();
     if (!noteTitle.trim() || !noteHtmlContent.trim()) {
@@ -53,11 +78,13 @@ export function EngineeringPage() {
         title: noteTitle,
         category: noteCategory,
         content: noteHtmlContent,
+        attachments: noteAttachments,
       });
-      announce("Site summary and engineering description saved");
+      announce("Site summary and attached technical documents saved");
       setShowNoteModal(false);
       setNoteTitle("");
       setNoteHtmlContent("");
+      setNoteAttachments([]);
     } catch (err) {
       announce(errMessage(err, "Could not save engineering note"));
     }
@@ -79,10 +106,12 @@ export function EngineeringPage() {
         title="Technical Designs & Site Descriptions"
         text="Write rich site design summaries, structural specifications, and manage drawings and calculation sheets."
         action={
-          <button className="primary-button" onClick={() => setShowNoteModal(true)}>
-            <Plus size={18} />
-            Write Site Description
-          </button>
+          canWrite ? (
+            <button className="primary-button" onClick={() => setShowNoteModal(true)}>
+              <Plus size={18} />
+              Write Site Description
+            </button>
+          ) : null
         }
       />
 
@@ -227,6 +256,39 @@ export function EngineeringPage() {
                         }}
                         dangerouslySetInnerHTML={{ __html: n.content }}
                       />
+                      {n.attachments && n.attachments.length > 0 && (
+                        <div style={{ marginTop: "0.85rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                          <span style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: 600, width: "100%" }}>
+                            Attached Documents & Drawings ({n.attachments.length}):
+                          </span>
+                          {n.attachments.map((att, idx) => (
+                            <a
+                              key={idx}
+                              href={att.url}
+                              download={att.name}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.4rem",
+                                padding: "4px 10px",
+                                background: "#f0fdf4",
+                                border: "1px solid #bbf7d0",
+                                borderRadius: "6px",
+                                color: "#166534",
+                                fontSize: "0.82rem",
+                                fontWeight: 500,
+                                textDecoration: "none",
+                              }}
+                            >
+                              <Paperclip size={14} />
+                              {att.name} {att.size ? `(${fmtSize(att.size)})` : ""}
+                              <Download size={14} style={{ marginLeft: "2px" }} />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
@@ -252,7 +314,10 @@ export function EngineeringPage() {
         <Modal
           title="Compose Site Description / Engineering Summary"
           subtitle={`Project: ${selectedProject?.name || ""}`}
-          onClose={() => setShowNoteModal(false)}
+          onClose={() => {
+            setShowNoteModal(false);
+            setNoteAttachments([]);
+          }}
           wide
         >
           <form className="form-grid single" onSubmit={handleCreateNote}>
@@ -282,8 +347,44 @@ export function EngineeringPage() {
               />
             </Field>
 
+            <Field label="Attach Site Documents / Drawings (PDFs, CAD specs, Images)">
+              <input type="file" multiple onChange={handleFileChange} />
+              {noteAttachments.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem" }}>
+                  {noteAttachments.map((att, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.4rem",
+                        background: "#e2e8f0",
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        fontSize: "0.8rem",
+                        color: "#334155",
+                      }}
+                    >
+                      <Paperclip size={14} />
+                      {att.name} ({fmtSize(att.size)})
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(idx)}
+                        style={{ border: 0, background: "transparent", cursor: "pointer", color: "#ef4444" }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Field>
+
             <FormActions
-              onClose={() => setShowNoteModal(false)}
+              onClose={() => {
+                setShowNoteModal(false);
+                setNoteAttachments([]);
+              }}
               label={createNote.isPending ? "Saving Note…" : "Save Site Description"}
             />
           </form>

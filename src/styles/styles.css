@@ -941,3 +941,37 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .subtask-delete-btn:hover {
   color: #d32f2f;
 }
+
+/* Rich Text Editor formatting */
+.rich-editor-content p {
+  margin: 0 0 0.5rem 0;
+  font-weight: normal;
+}
+.rich-editor-content h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  color: #0f172a;
+}
+.rich-editor-content h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  color: #1e293b;
+}
+.rich-editor-content b,
+.rich-editor-content strong {
+  font-weight: 700;
+}
+.rich-editor-content blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 12px;
+  margin: 0.5rem 0;
+  color: #475569;
+  font-style: italic;
+}
+.rich-editor-content ul,
+.rich-editor-content ol {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
