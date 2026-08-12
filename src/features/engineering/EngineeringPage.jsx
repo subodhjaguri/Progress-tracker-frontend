@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Compass, FileText, Ruler, Calculator, Plus, Trash2, Edit3, Paperclip, Download, X } from "lucide-react";
+import { Compass, FileText, Ruler, Calculator, Plus, Trash2, Edit3, Paperclip, Download, X, ListChecks } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
 import { Section, Field, Modal } from "../../components/index.js";
 import { FormActions } from "../shared/FormActions.jsx";
 import { DocumentsPanel } from "../shared/DocumentsPanel.jsx";
 import { RichTextEditor } from "../../components/ui/RichTextEditor.jsx";
+import { ChecklistsPanel } from "./ChecklistsPanel.jsx";
 import { useProjects } from "../../api/projects.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
@@ -161,7 +162,7 @@ export function EngineeringPage() {
         </div>
       ) : (
         <>
-          <div className="stats-grid material-stats">
+          <div className="stats-grid engineering-tabs">
             <div
               className={`stat-card clickable ${activeCategory === "Site Summary" ? "active-tab" : ""}`}
               onClick={() => setActiveCategory("Site Summary")}
@@ -170,6 +171,17 @@ export function EngineeringPage() {
               <div>
                 <strong>Site Descriptions & Summaries</strong>
                 <span>Rich text site updates & design specs</span>
+              </div>
+            </div>
+
+            <div
+              className={`stat-card clickable ${activeCategory === "Checklists" ? "active-tab" : ""}`}
+              onClick={() => setActiveCategory("Checklists")}
+            >
+              <ListChecks size={24} className="stat-icon" />
+              <div>
+                <strong>Site Checklists</strong>
+                <span>To-do lists for site visits & verification</span>
               </div>
             </div>
 
@@ -207,7 +219,13 @@ export function EngineeringPage() {
             </div>
           </div>
 
-          {activeCategory === "Site Summary" ? (
+          {activeCategory === "Checklists" ? (
+            <ChecklistsPanel
+              projectId={projectId}
+              projectName={selectedProject?.name}
+              canWrite={canWrite}
+            />
+          ) : activeCategory === "Site Summary" ? (
             <Section
               title={`${selectedProject?.name || "Project"} — Site Descriptions & Specifications`}
               eyebrow="ENGINEERING NOTES & SUMMARIES"

@@ -29,3 +29,40 @@ export function useDeleteEngineeringNote() {
     },
   });
 }
+
+// ---- Engineering checklists (engineer-authored to-do lists) ----
+
+export function useChecklists(projectId) {
+  return useQuery({
+    queryKey: ["engineeringChecklists", projectId],
+    queryFn: async () =>
+      unwrap(await api.get(`/engineering-checklists?project=${projectId}`)) || [],
+    enabled: !!projectId,
+  });
+}
+
+export function useCreateChecklist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body) => unwrap(await api.post("/engineering-checklists", body)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["engineeringChecklists"] }),
+  });
+}
+
+/** One write path for every edit: rename, add/remove items, and ticking them off. */
+export function useUpdateChecklist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...body }) =>
+      unwrap(await api.put(`/engineering-checklists/${id}`, body)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["engineeringChecklists"] }),
+  });
+}
+
+export function useDeleteChecklist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id) => unwrap(await api.delete(`/engineering-checklists/${id}`)),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["engineeringChecklists"] }),
+  });
+}

@@ -364,7 +364,10 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .documents-list strong { font-size: 10px; }.documents-list span { margin-top: 3px; color: var(--muted); font-size: 8px; }
 .attendance-stats, .material-stats { grid-template-columns: repeat(4, 1fr); }
 /* Payments shows the three payment-type totals alongside the two summaries. */
-.payment-stats { grid-template-columns: repeat(5, 1fr); }
+.payment-stats { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+/* Engineering has five category tabs. auto-fit + minmax so they shrink and then
+   wrap instead of overflowing — plain 1fr will not shrink below min-content. */
+.engineering-tabs { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 .attendance-table-header, .attendance-person { display: grid; grid-template-columns: minmax(190px, 1.2fr) .6fr 1fr minmax(280px, 1.3fr); align-items: center; gap: 14px; }
 .attendance-table-header { padding: 11px 18px; color: var(--muted); background: #f6f8f6; font-size: 9px; text-transform: uppercase; }
 .attendance-person { min-height: 67px; padding: 9px 18px; border-bottom: 1px solid var(--soft-line); font-size: 10px; }
@@ -1058,3 +1061,23 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
   padding-left: 1.25rem;
   margin: 0.5rem 0;
 }
+
+/* ============================ Engineering checklists ============================ */
+.checklist-list { display: flex; flex-direction: column; gap: 14px; }
+.checklist-card { padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+.checklist-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.checklist-card header strong { display: block; font-size: 15px; color: var(--ink); }
+.checklist-card header small { color: var(--muted); font-size: 11px; }
+.checklist-head-right { display: flex; align-items: center; gap: 6px; }
+.checklist-count { padding: 3px 9px; border-radius: 12px; color: var(--muted); background: var(--soft-line); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.checklist-count.complete { color: var(--green); background: #e7f1ed; }
+.checklist-items { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.checklist-items li { padding: 7px 10px; border-radius: 8px; background: var(--canvas); }
+.checklist-items li label { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; cursor: pointer; }
+.checklist-items li input[type="checkbox"] { margin-top: 2px; width: 16px; height: 16px; accent-color: var(--green); cursor: pointer; }
+.checklist-items li input[type="checkbox"]:disabled { cursor: default; }
+.checklist-items li.done span { color: var(--muted); text-decoration: line-through; }
+.checklist-items li small { display: block; margin-left: 25px; margin-top: 2px; color: var(--muted); font-size: 10px; }
+.checklist-editor { display: flex; flex-direction: column; gap: 8px; }
+.checklist-editor-row { display: flex; align-items: center; gap: 8px; }
+.checklist-editor-row input { flex: 1; }
