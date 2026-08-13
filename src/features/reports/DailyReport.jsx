@@ -115,8 +115,8 @@ function ReportSheet({ report, date, projectId, role }) {
       <div className="report-metrics">
         <MetricTile
           icon={HardHat}
-          value={att.present || 0}
-          label="Present today"
+          value={att.total || 0}
+          label="On site today"
           onClick={canSeeAttendance ? () => navigate(`/attendance?${q}`) : null}
         />
         <MetricTile

@@ -96,13 +96,6 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .login-error { padding: 10px 12px; border-radius: 9px; background: #fdeceb; color: var(--red); font-size: 13px; font-weight: 600; white-space: pre-line; }
 .login-submit { justify-content: center; margin-top: 4px; }
 .user-dropdown-action.subtle:hover { color: var(--green); background: #edf5f1; }
-.att-cell { display: flex; align-items: center; gap: 8px; }
-.att-cell .attendance-selector { flex: 1; }
-.att-edit { flex: 0 0 auto; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 8px; }
-.att-status { padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-align: center; justify-self: start; }
-.att-status.present { color: var(--green); background: #e2f0ea; }
-.att-status.absent { color: #a33f38; background: #f9e7e5; }
-.att-status.half-day { color: #98601e; background: #fbefde; }
 .status-toggle { padding: 0; border: 0; background: transparent; cursor: pointer; }
 .task-add { display: flex; gap: 9px; margin-top: 13px; }
 .task-add input { flex: 1; height: 42px; padding: 0 14px; border: 1px solid var(--line); border-radius: 9px; font-size: 13px; }
@@ -200,17 +193,6 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .status-issued { color: #a25c13; background: #fbecd9; }
 .status-received { color: #1b6752; background: #e2f0ea; }
 .status-used { color: #6b4fa0; background: #ece7f6; }
-.attendance-ring-wrap { padding: 20px 20px 14px; display: flex; align-items: center; gap: 23px; }
-.attendance-ring { width: 118px; height: 118px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--green) var(--attendance), #e8ecea 0); }
-.attendance-ring::before { content: ""; position: absolute; width: 86px; height: 86px; border-radius: 50%; background: white; }
-.attendance-ring > div { z-index: 1; text-align: center; }
-.attendance-ring strong, .attendance-ring span { display: block; }
-.attendance-ring strong { font-family: "Manrope"; font-size: 23px; }
-.attendance-ring span { color: var(--muted); font-size: 9px; }
-.attendance-legend { flex: 1; display: grid; gap: 10px; }
-.attendance-legend div { display: grid; grid-template-columns: 8px 1fr auto; align-items: center; gap: 7px; font-size: 10px; }
-.attendance-legend i { width: 7px; height: 7px; border-radius: 50%; }
-.attendance-legend i.present { background: var(--green); }.attendance-legend i.absent { background: var(--red); }.attendance-legend i.half { background: var(--amber); }
 .attendance-callout { margin: 0 18px 18px; padding: 11px; border-radius: 9px; display: flex; align-items: center; gap: 10px; color: #7f591e; background: #fcf3e3; }
 .attendance-callout span, .attendance-callout strong { display: block; font-size: 9px; }
 .attendance-callout strong { margin-bottom: 2px; font-size: 10px; }
@@ -364,19 +346,10 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
 .documents-list strong { font-size: 10px; }.documents-list span { margin-top: 3px; color: var(--muted); font-size: 8px; }
 .attendance-stats, .material-stats { grid-template-columns: repeat(4, 1fr); }
 /* Payments shows the three payment-type totals alongside the two summaries. */
-.payment-stats { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.payment-stats { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 /* Engineering has five category tabs. auto-fit + minmax so they shrink and then
    wrap instead of overflowing — plain 1fr will not shrink below min-content. */
 .engineering-tabs { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-.attendance-table-header, .attendance-person { display: grid; grid-template-columns: minmax(190px, 1.2fr) .6fr 1fr minmax(280px, 1.3fr); align-items: center; gap: 14px; }
-.attendance-table-header { padding: 11px 18px; color: var(--muted); background: #f6f8f6; font-size: 9px; text-transform: uppercase; }
-.attendance-person { min-height: 67px; padding: 9px 18px; border-bottom: 1px solid var(--soft-line); font-size: 10px; }
-.person-cell { display: flex; align-items: center; gap: 10px; }
-.person-cell strong, .person-cell small { display: block; }
-.person-cell strong { font-size: 11px; }.person-cell small { margin-top: 3px; display: flex; align-items: center; gap: 3px; color: var(--muted); font-size: 8px; }
-.attendance-selector { padding: 3px; border: 1px solid var(--line); border-radius: 9px; display: flex; }
-.attendance-selector button { flex: 1; height: 30px; padding: 0 8px; border: 0; border-radius: 6px; color: var(--muted); background: transparent; font-size: 9px; }
-.attendance-selector button.present { color: var(--green); background: #e2f0ea; }.attendance-selector button.absent { color: #a33f38; background: #f9e7e5; }.attendance-selector button.half-day { color: #98601e; background: #fbefde; }
 .ledger-header, .ledger-list article { display: grid; grid-template-columns: 70px 1.1fr 1fr 1fr 1.2fr; align-items: center; gap: 14px; }
 .ledger-header { padding: 11px 18px; color: var(--muted); background: #f6f8f6; font-size: 9px; text-transform: uppercase; }
 .ledger-list article { min-height: 73px; padding: 11px 18px; border-bottom: 1px solid var(--soft-line); font-size: 10px; }
@@ -445,8 +418,6 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
   .media-gallery { grid-template-columns: repeat(2, 1fr); }
   .order-table-row, .orders-table-header { grid-template-columns: minmax(200px, 1.5fr) 1fr 90px 100px 18px; }
   .order-table-row > :nth-child(5), .orders-table-header > :nth-child(5) { display: none; }
-  .attendance-table-header, .attendance-person { grid-template-columns: 1.1fr .6fr minmax(260px, 1.2fr); }
-  .attendance-table-header > :nth-child(3), .attendance-person > :nth-child(3) { display: none; }
 }
 
 @media (max-width: 850px) {
@@ -503,10 +474,6 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
   .work-order-heading > div > div { align-items: flex-start; flex-direction: column; }
   .order-overview { grid-template-columns: 1fr 1fr; }
   .media-gallery { grid-template-columns: 1fr; }
-  .attendance-table-header { display: none; }
-  .attendance-person { padding: 14px; grid-template-columns: 1fr auto; }
-  .attendance-person > :nth-child(2) { font-size: 9px; }
-  .attendance-selector { grid-column: 1 / -1; }
   .ledger-header { display: none; }
   .ledger-list article { padding: 14px; grid-template-columns: 55px 1fr; gap: 8px; }
   .ledger-list article > :nth-child(3), .ledger-list article > :nth-child(5) { display: none; }
@@ -1062,8 +1029,24 @@ h1, h2, h3, .brand { font-family: "Manrope", sans-serif; }
   margin: 0.5rem 0;
 }
 
+.icon-button:disabled { color: var(--muted); cursor: not-allowed; }
+
+/* ============================ Attendance headcount ============================ */
+.headcount-list { margin: 0; padding: 14px 17px; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.headcount-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 9px; background: var(--canvas); font-size: 13px; }
+.headcount-list li strong { font-family: "Manrope", sans-serif; font-size: 16px; }
+.headcount-list li.headcount-total { background: #e7f1ed; color: var(--green); }
+.headcount-list li.headcount-total strong { font-size: 18px; }
+.headcount-editor { display: flex; flex-direction: column; gap: 8px; }
+.headcount-row { display: grid; grid-template-columns: 1fr 110px 38px; align-items: center; gap: 10px; }
+.headcount-row > span:first-child { font-size: 13px; color: var(--ink); }
+.headcount-spacer { display: block; }
+.headcount-sum { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.headcount-sum strong { font-size: 17px; color: var(--green); font-family: "Manrope", sans-serif; }
+.headcount-summary { min-height: 60px; }
+
 /* ============================ Engineering checklists ============================ */
-.checklist-list { display: flex; flex-direction: column; gap: 14px; }
+.checklist-list { padding: 14px 17px; display: flex; flex-direction: column; gap: 14px; }
 .checklist-card { padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px; background: white; }
 .checklist-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
 .checklist-card header strong { display: block; font-size: 15px; color: var(--ink); }

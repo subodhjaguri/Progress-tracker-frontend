@@ -10,8 +10,6 @@ import {
   CircleAlert,
   TrendingUp,
   UserRoundCheck,
-  Clock3,
-  X,
 } from "lucide-react";
 import { Section, StatusPill, StatCard, Field } from "../../components/index.js";
 import { OrderRow } from "./OrderRow.jsx";
@@ -20,11 +18,11 @@ import { DocumentsPanel } from "../shared/DocumentsPanel.jsx";
 import { CommentsPanel } from "../shared/CommentsPanel.jsx";
 import { useProject, useUpdateProject } from "../../api/projects.js";
 import { useSupervisors, useEngineers } from "../../api/users.js";
-import { useAttendance, useAttendanceSummary } from "../../api/attendance.js";
+import { useAttendance } from "../../api/attendance.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { errMessage } from "../../lib/api.js";
-import { initials } from "../../lib/format.js";
+
 
 const TABS = ["Overview", "Work Orders", "Attendance", "Updates", "Photos", "Documents", "Comments"];
 
@@ -272,10 +270,10 @@ export function ProjectDetail() {
 function ProjectAttendancePanel({ projectId }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const records = useAttendance({ project: projectId, date });
-  const summary = useAttendanceSummary({ scope: "project", id: projectId, date });
 
-  const s = summary.data || { present: 0, absent: 0, halfDay: 0, total: 0 };
-  const list = records.data || [];
+  const record = (records.data || [])[0] || null;
+  const trades = record?.entries || [];
+  const total = record?.total ?? 0;
 
   return (
     <>
@@ -285,43 +283,28 @@ function ProjectAttendancePanel({ projectId }) {
         </Field>
       </div>
       <div className="stats-grid attendance-stats" style={{ marginBottom: "1.5rem" }}>
-        <StatCard label="Total" value={s.total} icon={HardHat} tone="green" />
-        <StatCard label="Present" value={s.present} icon={UserRoundCheck} tone="blue" />
-        <StatCard label="Absent" value={s.absent} icon={X} tone="red" />
-        <StatCard label="Half day" value={s.halfDay} icon={Clock3} tone="amber" />
+        <StatCard label="On site" value={total} icon={HardHat} tone="green" />
+        <StatCard label="Trades present" value={trades.length} icon={UserRoundCheck} tone="blue" />
       </div>
       <Section title="Daily site attendance" className="attendance-panel">
-        {list.length === 0 ? (
+        {!record ? (
           <div className="empty-inline">
             <strong>No attendance recorded</strong>
-            <p>Nothing was marked for this project on this date.</p>
+            <p>Nothing was recorded for this project on this date.</p>
           </div>
         ) : (
-          <>
-            <div className="attendance-table-header">
-              <span>Labour</span>
-              <span>Skill</span>
-              <span>Work order</span>
-              <span>Status</span>
-            </div>
-            <div className="attendance-table">
-              {list.map((r) => (
-                <div className="attendance-person" key={r.id}>
-                  <div className="person-cell">
-                    <div className="avatar">{initials(r.labour?.name || "")}</div>
-                    <span>
-                      <strong>{r.labour?.name || "—"}</strong>
-                    </span>
-                  </div>
-                  <span>{r.labour?.skill || "—"}</span>
-                  <span>{r.workOrder?.title || "Direct Site"}</span>
-                  <span className={`att-status ${(r.status || "").toLowerCase().replace(" ", "-")}`}>
-                    {r.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </>
+          <ul className="headcount-list">
+            {trades.map((entry) => (
+              <li key={entry.trade}>
+                <span>{entry.trade}</span>
+                <strong>{entry.count}</strong>
+              </li>
+            ))}
+            <li className="headcount-total">
+              <span>Total on site</span>
+              <strong>{total}</strong>
+            </li>
+          </ul>
         )}
       </Section>
     </>

@@ -17,6 +17,7 @@ export function PaymentsPage() {
   const { announce } = useData();
   const projects = useProjects();
   const isManager = role === "MANAGER" || role === "SUPER_ADMIN";
+  const isSupervisor = role === "SUPERVISOR";
   // Only the manager-only Contractor-payment form needs this list, and
   // /contractors is forbidden to supervisors — don't fire the request for them.
   const contractors = useContractors(isManager);
@@ -123,7 +124,11 @@ export function PaymentsPage() {
       <PageHeading
         eyebrow="FINANCE & PAYMENTS"
         title="Site Payments & Labour Payouts"
-        text="Manage daily labour payment requests, contractor milestone payouts, and site miscellaneous costs."
+        text={
+          isSupervisor
+            ? "Request the daily payout for your site workforce and track what has been paid."
+            : "Manage daily labour payment requests, contractor milestone payouts, and site miscellaneous costs."
+        }
         action={
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button className="primary-button" onClick={() => setCreateModalType("Labour")}>
@@ -151,22 +156,29 @@ export function PaymentsPage() {
         <StatCard label="Total Paid Out" value={`₹${totalPaid.toLocaleString()}`} icon={IndianRupee} tone="green" />
         <StatCard label="Pending Requests" value={pendingCount} icon={Users} tone="amber" />
         <StatCard label="Labour Payouts" value={`₹${labourTotal.toLocaleString()}`} icon={HardHat} tone="dark-green" />
-        <StatCard label="Contractor Payouts" value={`₹${contractorTotal.toLocaleString()}`} icon={Briefcase} tone="blue" />
-        <StatCard label="Misc Costs" value={`₹${miscTotal.toLocaleString()}`} icon={ReceiptText} tone="violet" />
+        {!isSupervisor && (
+          <>
+            <StatCard label="Contractor Payouts" value={`₹${contractorTotal.toLocaleString()}`} icon={Briefcase} tone="blue" />
+            <StatCard label="Misc Costs" value={`₹${miscTotal.toLocaleString()}`} icon={ReceiptText} tone="violet" />
+          </>
+        )}
       </div>
 
       <div className="toolbar">
-        <div className="filter-tabs">
-          {TYPES.map((t) => (
-            <button
-              key={t}
-              className={activeType === t ? "active" : ""}
-              onClick={() => setActiveType(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+        {/* Supervisors only ever see Labour payments — nothing to filter between. */}
+        {!isSupervisor && (
+          <div className="filter-tabs">
+            {TYPES.map((t) => (
+              <button
+                key={t}
+                className={activeType === t ? "active" : ""}
+                onClick={() => setActiveType(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="date-filter">
           <Field label="Project">
             <select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}>

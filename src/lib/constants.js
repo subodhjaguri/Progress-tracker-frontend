@@ -56,7 +56,6 @@ export const roles = {
 // Controlled value sets (kept exactly — StatusPill + CSS derive from them).
 export const PROJECT_FILTERS = ["All", "In Progress", "Blocked", "Completed"];
 export const WORK_ORDER_FILTERS = ["All", "Not Started", "In Progress", "Blocked", "Completed"];
-export const ATTENDANCE_STATUSES = ["Present", "Absent", "Half Day"];
 export const SKILLS = [
   "Mason",
   "Welder",

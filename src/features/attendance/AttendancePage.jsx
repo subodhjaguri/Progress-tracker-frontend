@@ -1,109 +1,104 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate, useSearchParams } from "react-router-dom";
-import { HardHat, UserRoundCheck, X, Clock3, CircleCheckBig } from "lucide-react";
+import { HardHat, UserRoundCheck, CircleCheckBig, Plus, X } from "lucide-react";
 import { PageHeading } from "../../components/layout/PageHeading.jsx";
-import { StatCard, Section, Field } from "../../components/index.js";
+import { StatCard, Section, Field, Modal } from "../../components/index.js";
+import { FormActions } from "../shared/FormActions.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
-import { useWorkOrders } from "../../api/workOrders.js";
 import { useProjects } from "../../api/projects.js";
-import { useLabour } from "../../api/labour.js";
-import {
-  useAttendance,
-  useMarkAttendance,
-  useAttendanceSummary,
-} from "../../api/attendance.js";
-import { ATTENDANCE_STATUSES } from "../../lib/constants.js";
-import { initials } from "../../lib/format.js";
+import { useAttendance, useMarkAttendance } from "../../api/attendance.js";
+import { SKILLS } from "../../lib/constants.js";
 import { errMessage } from "../../lib/api.js";
 
 const today = () => new Date().toISOString().slice(0, 10);
-const statusClass = (s) => s.toLowerCase().replace(" ", "-");
 
 export function AttendancePage() {
   const { role } = useAuth();
   if (role === "CONTRACTOR") return <Navigate to="/" replace />;
-  return role === "SUPERVISOR" ? <SupervisorAttendance /> : <ManagerAttendance />;
+  // Guard sits here, above every hook, so the view below can use them freely.
+  return <AttendanceView canRecord={role === "SUPERVISOR"} />;
 }
 
-// ---- Supervisor: mark attendance for their labour on a work order ----
-function SupervisorAttendance() {
-  const { announce } = useData();
+/** The standard trades, plus any one-off trade the site adds on the day. */
+const blankRows = () => SKILLS.map((trade) => ({ key: trade, trade, count: "" }));
+const customRow = () => ({ key: `x${Math.random().toString(36).slice(2)}`, trade: "", count: "", custom: true });
+
+function AttendanceView({ canRecord }) {
   const navigate = useNavigate();
+  const { announce } = useData();
   const [params] = useSearchParams();
   const [date, setDate] = useState(params.get("date") || today());
   const [projectId, setProjectId] = useState(params.get("project") || "");
-  const [marks, setMarks] = useState({});
-  const [savedLabourIds, setSavedLabourIds] = useState(new Set());
+  const [showForm, setShowForm] = useState(false);
+  const [rows, setRows] = useState(blankRows);
+  const [error, setError] = useState("");
 
   const projects = useProjects();
-  const labour = useLabour();
-  const existing = useAttendance({ project: projectId, date });
+  const { data: records = [], isLoading } = useAttendance({ project: projectId, date });
   const mark = useMarkAttendance();
 
   useEffect(() => {
     if (!projectId && projects.data?.length) setProjectId(projects.data[0].id);
   }, [projects.data, projectId]);
 
-  useEffect(() => {
-    const map = {};
-    const saved = new Set();
-    (existing.data || []).forEach((r) => {
-      const lId = r.labour?.id || r.labour?._id || r.labour;
-      if (lId) {
-        map[lId] = r.status;
-        saved.add(String(lId));
-      }
-    });
-    setMarks(map);
-    setSavedLabourIds(saved);
-  }, [existing.data]);
+  const record = records[0] || null;
+  const selectedProject = (projects.data || []).find((p) => p.id === projectId);
 
-  const roster = labour.data || [];
-  const selectedProj = (projects.data || []).find((p) => p.id === projectId);
-  const counts = { Present: 0, Absent: 0, "Half Day": 0 };
-  roster.forEach((l) => {
-    if (marks[l.id]) counts[marks[l.id]] += 1;
-  });
+  const openForm = () => {
+    setRows(blankRows());
+    setError("");
+    setShowForm(true);
+  };
 
-  const unsubmittedRoster = roster.filter((l) => !savedLabourIds.has(String(l.id)));
-  const allAlreadyMarked = roster.length > 0 && unsubmittedRoster.length === 0;
+  const setRow = (index, patch) =>
+    setRows((prev) => prev.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  const addCustom = () => setRows((prev) => [...prev, customRow()]);
+  const removeRow = (index) => setRows((prev) => prev.filter((_, i) => i !== index));
 
-  const save = async () => {
-    if (!selectedProj) return announce("Select a project first");
-    const entries = unsubmittedRoster
-      .filter((l) => marks[l.id])
-      .map((l) => ({ labour: l.id, status: marks[l.id] }));
-    if (!entries.length) return announce("Mark at least one unsubmitted labourer");
+  const formTotal = rows.reduce((sum, r) => sum + (Number(r.count) || 0), 0);
+
+  const save = async (event) => {
+    event.preventDefault();
+    setError("");
+    if (!projectId) return setError("Select a project first");
+    const entries = rows
+      .filter((r) => r.trade.trim() && Number(r.count) > 0)
+      .map((r) => ({ trade: r.trade.trim(), count: Number(r.count) }));
+    if (!entries.length) return setError("Enter a headcount for at least one trade");
+
     try {
-      await mark.mutateAsync({
-        date,
-        project: selectedProj.id,
-        entries,
-      });
-      announce("Attendance saved");
+      await mark.mutateAsync({ date, project: projectId, entries });
+      announce(`Attendance recorded — ${formTotal} on site`);
+      setShowForm(false);
     } catch (err) {
-      announce(errMessage(err, "Could not save attendance"));
+      setError(errMessage(err, "Could not record attendance"));
     }
   };
+
+  const total = record?.total ?? 0;
+  const trades = record?.entries || [];
 
   return (
     <>
       <PageHeading
         eyebrow="ATTENDANCE"
-        title="Mark today's attendance"
+        title="Who is on site today"
         text={
-          allAlreadyMarked
-            ? "Attendance for this date has already been marked and locked."
-            : "Choose a project and date, then mark your workforce."
+          canRecord
+            ? "Record the headcount by trade. Pick the date and site, then enter how many of each trade turned up."
+            : "The daily headcount by trade, as recorded by the site supervisor."
         }
         action={
-          <button className="primary-button" onClick={save} disabled={mark.isPending || allAlreadyMarked}>
-            <CircleCheckBig size={18} />
-            {mark.isPending ? "Saving…" : allAlreadyMarked ? "Attendance marked" : "Save attendance"}
-          </button>
+          canRecord ? (
+            <button className="primary-button" onClick={openForm} disabled={!!record}>
+              <CircleCheckBig size={18} />
+              {record ? "Already recorded" : "Record attendance"}
+            </button>
+          ) : undefined
         }
       />
+
       <div className="report-controls">
         <Field label="Date">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -119,153 +114,115 @@ function SupervisorAttendance() {
           </select>
         </Field>
       </div>
+
       <div className="stats-grid attendance-stats">
-        <StatCard label="Total labour" value={roster.length} icon={HardHat} tone="green" />
-        <StatCard label="Present" value={counts.Present} icon={UserRoundCheck} tone="blue" />
-        <StatCard label="Absent" value={counts.Absent} icon={X} tone="red" />
-        <StatCard label="Half day" value={counts["Half Day"]} icon={Clock3} tone="amber" />
+        <StatCard label="On site" value={total} icon={HardHat} tone="green" />
+        <StatCard label="Trades present" value={trades.length} icon={UserRoundCheck} tone="blue" />
       </div>
+
       <Section
-        title="Your workforce"
-        eyebrow={allAlreadyMarked ? "DAILY ATTENDANCE (LOCKED)" : "DAILY ATTENDANCE"}
-        action={
-          <button className="small-button" onClick={() => navigate("/labour")}>
-            Manage labour
-          </button>
-        }
+        title={`${selectedProject?.name || "Project"} — headcount`}
+        eyebrow="DAILY ATTENDANCE"
         className="attendance-panel"
-      >
-        {roster.length === 0 ? (
-          <div className="empty-inline">
-            <strong>No labour yet</strong>
-            <p>Add your workforce in the Labour area, then mark attendance here.</p>
-            <button className="primary-button" onClick={() => navigate("/labour")}>
-              Go to Labour
+        action={
+          canRecord ? (
+            <button className="small-button" onClick={() => navigate("/labour")}>
+              Manage labour
             </button>
-          </div>
-        ) : (
-          <>
-            <div className="attendance-table-header">
-              <span>Labour</span>
-              <span>Skill</span>
-              <span>Mobile</span>
-              <span>Attendance</span>
-            </div>
-            <div className="attendance-table">
-              {roster.map((person) => {
-                const isLocked = savedLabourIds.has(String(person.id));
-                return (
-                  <div className="attendance-person" key={person.id}>
-                    <div className="person-cell">
-                      <div className="avatar">{initials(person.name)}</div>
-                      <span>
-                        <strong>{person.name}</strong>
-                        <small>
-                          {person.aadhaarNumber ? `Aadhaar ${person.aadhaarNumber}` : "—"}
-                        </small>
-                      </span>
-                    </div>
-                    <span>{person.skill}</span>
-                    <span>{person.mobile || "—"}</span>
-                    <div className="attendance-selector">
-                      {ATTENDANCE_STATUSES.map((s) => (
-                        <button
-                          key={s}
-                          disabled={isLocked}
-                          className={marks[person.id] === s ? statusClass(s) : ""}
-                          onClick={() => !isLocked && setMarks((m) => ({ ...m, [person.id]: s }))}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </Section>
-    </>
-  );
-}
-
-// ---- Manager / Super Admin: read-only attendance by project + date ----
-function ManagerAttendance() {
-  const [params] = useSearchParams();
-  const [date, setDate] = useState(params.get("date") || today());
-  const [projectId, setProjectId] = useState(params.get("project") || "");
-  const projects = useProjects();
-  const records = useAttendance({ project: projectId, date });
-  const summary = useAttendanceSummary({ scope: "project", id: projectId, date });
-
-  useEffect(() => {
-    if (!projectId && projects.data?.length) setProjectId(projects.data[0].id);
-  }, [projects.data, projectId]);
-
-  const s = summary.data || { present: 0, absent: 0, halfDay: 0, total: 0 };
-  const list = records.data || [];
-
-  return (
-    <>
-      <PageHeading
-        eyebrow="ATTENDANCE (READ-ONLY)"
-        title="Site attendance"
-        text="Review who was on site, by project and date. Marking attendance is managed by the site supervisor."
-      />
-      <div className="report-controls">
-        <Field label="Project">
-          <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-            {(projects.data || []).length === 0 && <option value="">No projects</option>}
-            {(projects.data || []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Date">
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </Field>
-      </div>
-      <div className="stats-grid attendance-stats">
-        <StatCard label="Total" value={s.total} icon={HardHat} tone="green" />
-        <StatCard label="Present" value={s.present} icon={UserRoundCheck} tone="blue" />
-        <StatCard label="Absent" value={s.absent} icon={X} tone="red" />
-        <StatCard label="Half day" value={s.halfDay} icon={Clock3} tone="amber" />
-      </div>
-      <Section title="Daily attendance" eyebrow="ALL CONTRACTORS" className="attendance-panel">
-        {list.length === 0 ? (
+          ) : undefined
+        }
+      >
+        {isLoading ? (
           <div className="empty-inline">
-            <strong>No attendance recorded</strong>
-            <p>Nothing was marked for this project on this date.</p>
+            <strong>Loading…</strong>
+          </div>
+        ) : !record ? (
+          <div className="empty-inline">
+            <HardHat />
+            <strong>Nothing recorded for this date</strong>
+            <p>
+              {canRecord
+                ? "Use “Record attendance” to enter today’s headcount by trade."
+                : "The supervisor has not recorded the headcount for this date yet."}
+            </p>
           </div>
         ) : (
-          <>
-            <div className="attendance-table-header">
-              <span>Labour</span>
-              <span>Skill</span>
-              <span>Work order</span>
-              <span>Status</span>
-            </div>
-            <div className="attendance-table">
-              {list.map((r) => (
-                <div className="attendance-person" key={r.id}>
-                  <div className="person-cell">
-                    <div className="avatar">{initials(r.labour?.name || "")}</div>
-                    <span>
-                      <strong>{r.labour?.name || "—"}</strong>
-                    </span>
-                  </div>
-                  <span>{r.labour?.skill || "—"}</span>
-                  <span>{r.workOrder?.title || "Direct Site"}</span>
-                  <span className={`att-status ${statusClass(r.status)}`}>{r.status}</span>
-                </div>
-              ))}
-            </div>
-          </>
+          <ul className="headcount-list">
+            {trades.map((entry) => (
+              <li key={entry.trade}>
+                <span>{entry.trade}</span>
+                <strong>{entry.count}</strong>
+              </li>
+            ))}
+            <li className="headcount-total">
+              <span>Total on site</span>
+              <strong>{total}</strong>
+            </li>
+          </ul>
         )}
       </Section>
+
+      {showForm && (
+        <Modal
+          title="Record attendance"
+          subtitle={`${selectedProject?.name || ""} · ${date}`}
+          onClose={() => setShowForm(false)}
+        >
+          <form className="form-grid single" onSubmit={save}>
+            <Field label="How many of each trade turned up? Leave blank for trades not on site.">
+              <div className="headcount-editor">
+                {rows.map((row, index) => (
+                  <div className="headcount-row" key={row.key}>
+                    {row.custom ? (
+                      <input
+                        value={row.trade}
+                        onChange={(e) => setRow(index, { trade: e.target.value })}
+                        placeholder="Trade name"
+                      />
+                    ) : (
+                      <span>{row.trade}</span>
+                    )}
+                    <input
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={row.count}
+                      onChange={(e) => setRow(index, { count: e.target.value })}
+                      placeholder="0"
+                    />
+                    {row.custom ? (
+                      <button
+                        type="button"
+                        className="icon-button"
+                        onClick={() => removeRow(index)}
+                        aria-label="Remove trade"
+                      >
+                        <X size={15} />
+                      </button>
+                    ) : (
+                      <span className="headcount-spacer" />
+                    )}
+                  </div>
+                ))}
+                <button type="button" className="small-button" onClick={addCustom}>
+                  <Plus size={14} /> Add another trade
+                </button>
+              </div>
+            </Field>
+
+            <p className="headcount-sum">
+              Total on site today: <strong>{formTotal}</strong>
+            </p>
+
+            {error && <p className="field-note warn">{error}</p>}
+
+            <FormActions
+              onClose={() => setShowForm(false)}
+              label={mark.isPending ? "Saving…" : "Save attendance"}
+            />
+          </form>
+        </Modal>
+      )}
     </>
   );
 }

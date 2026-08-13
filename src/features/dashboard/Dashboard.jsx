@@ -74,7 +74,7 @@ export function Dashboard() {
   const cards = dash.cards || {};
   const sections = dash.sections || {};
   const att = sections.attendanceToday ||
-    sections.todaysAttendance || { present: 0, absent: 0, halfDay: 0, total: 0, percentage: 0 };
+    sections.todaysAttendance || { byTrade: [], total: 0 };
   const recentUpdates = sections.recentUpdates || sections.todaysUpdates || [];
   const attention = (sections.blockedWorkOrders || sections.upcomingDueDates || []).slice(0, 3);
   const topProjects = projects.slice(0, 3);
@@ -140,36 +140,25 @@ export function Dashboard() {
           eyebrow="WORKFORCE"
           action={<TextAction onClick={() => navigate("/attendance")}>Manage</TextAction>}
         >
-          <div className="attendance-ring-wrap">
-            <div className="attendance-ring" style={{ "--attendance": `${att.percentage * 3.6}deg` }}>
-              <div>
-                <strong>{att.percentage}%</strong>
-                <span>Present</span>
-              </div>
-            </div>
-            <div className="attendance-legend">
-              <div>
-                <i className="present" />
-                <span>Present</span>
-                <strong>{att.present}</strong>
-              </div>
-              <div>
-                <i className="absent" />
-                <span>Absent</span>
-                <strong>{att.absent}</strong>
-              </div>
-              <div>
-                <i className="half" />
-                <span>Half day</span>
-                <strong>{att.halfDay}</strong>
-              </div>
-            </div>
+          <div className="headcount-summary">
+            {att.byTrade?.length ? (
+              <ul className="headcount-list">
+                {att.byTrade.map((t) => (
+                  <li key={t.trade}>
+                    <span>{t.trade}</span>
+                    <strong>{t.count}</strong>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="report-empty">No headcount recorded yet today.</p>
+            )}
           </div>
           <div className="attendance-callout">
             <SunMedium size={19} />
             <span>
-              <strong>{att.total ? `${att.total} marked today` : "No attendance marked yet"}</strong>
-              {att.total ? "Across your sites" : "Mark attendance from the Attendance page"}
+              <strong>{att.total ? `${att.total} on site today` : "No attendance recorded yet"}</strong>
+              {att.total ? "Across your sites" : "Record attendance from the Attendance page"}
             </span>
           </div>
         </Section>

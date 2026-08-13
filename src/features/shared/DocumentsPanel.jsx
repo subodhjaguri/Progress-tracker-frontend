@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Upload, FileText, Download, Trash2 } from "lucide-react";
+import { Upload, FileText, Download, Trash2, Lock } from "lucide-react";
 import { Section } from "../../components/index.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
@@ -111,6 +111,12 @@ export function DocumentsPanel({ parentType, parentId, categoryFilter }) {
             const isTechnical = d.category === "Drawing" || d.category === "Engineering Document";
             const saStatus = d.superAdminApproval?.status || "Pending";
             const mgrStatus = d.managerApproval?.status || "Pending";
+            // Visible to everyone, but the file stays locked for the site until
+            // both approvals land — the API refuses the download either way.
+            const locked =
+              isTechnical &&
+              !(saStatus === "Approved" && mgrStatus === "Approved") &&
+              !["SUPER_ADMIN", "MANAGER", "ENGINEER"].includes(role);
 
             return (
               <article key={d.id}>
@@ -145,9 +151,20 @@ export function DocumentsPanel({ parentType, parentId, categoryFilter }) {
                       Manager Approve
                     </button>
                   )}
-                  <button className="icon-button" onClick={() => downloadDocument(d)} aria-label="Download">
-                    <Download size={18} />
-                  </button>
+                  {locked ? (
+                    <button
+                      className="icon-button"
+                      disabled
+                      title="Awaiting approval — cannot be opened yet"
+                      aria-label="Awaiting approval"
+                    >
+                      <Lock size={17} />
+                    </button>
+                  ) : (
+                    <button className="icon-button" onClick={() => downloadDocument(d)} aria-label="Download">
+                      <Download size={18} />
+                    </button>
+                  )}
                   {canDelete(d) && (
                     <button className="icon-button" onClick={() => remove(d.id)} aria-label="Delete">
                       <Trash2 size={17} />
